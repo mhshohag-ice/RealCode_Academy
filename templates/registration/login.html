@@ -6,48 +6,89 @@
 
   <div class="auth-form-panel">
     <div class="rc-auth-card">
-      <div class="rc-auth-icon"><i data-lucide="log-in" width="24"></i></div>
-      <h2 class="mb-1">Welcome back</h2>
-      <p class="text-secondary mb-4">Log in to continue where you left off.</p>
+      {% include "partials/auth_tabs.html" with active="login" %}
+
+      <h1 class="rc-auth-title">Welcome back</h1>
+      <p class="rc-auth-subtitle">Sign in to continue your learning journey.</p>
 
       {% if form.non_field_errors %}
-      <div class="rc-form-error"><i data-lucide="alert-circle" width="16"></i> {{ form.non_field_errors.0 }}</div>
+      <div class="rc-form-error" role="alert"><i data-lucide="alert-circle" width="16"></i> {{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <form method="post" novalidate>
+      <form method="post" novalidate class="rc-auth-form">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
 
         <div class="rc-field">
-          <label class="rc-field-label" for="{{ form.username.id_for_label }}">Username</label>
+          <label class="rc-field-label" for="{{ form.username.id_for_label }}">Email or username</label>
           <div class="rc-input-wrap">
             <i data-lucide="user" width="16"></i>
             <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
-                   class="rc-input" placeholder="yourname" value="{{ form.username.value|default:'' }}" autofocus required>
+                   class="rc-input" placeholder="you@example.com" value="{{ form.username.value|default:'' }}"
+                   autocomplete="username" autofocus required
+                   {% if form.username.errors %}aria-invalid="true" aria-describedby="id_username_error"{% endif %}>
           </div>
-          {% if form.username.errors %}<div class="rc-field-error">{{ form.username.errors.0 }}</div>{% endif %}
+          {% if form.username.errors %}<div class="rc-field-error" id="id_username_error">{{ form.username.errors.0 }}</div>{% endif %}
         </div>
 
         <div class="rc-field">
-          <div class="d-flex justify-content-between align-items-center mb-1">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-1" style="row-gap:4px;">
             <label class="rc-field-label mb-0" for="{{ form.password.id_for_label }}">Password</label>
             <a href="{% url 'password_reset' %}" style="font-size:12.5px; color:var(--primary); font-weight:600;">Forgot password?</a>
           </div>
           <div class="rc-input-wrap">
             <i data-lucide="lock" width="16"></i>
             <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}"
-                   class="rc-input" placeholder="••••••••" required>
+                   class="rc-input rc-input-pw" placeholder="••••••••" autocomplete="current-password" required
+                   {% if form.password.errors %}aria-invalid="true" aria-describedby="id_password_error"{% endif %}>
+            <button type="button" class="rc-pw-toggle" data-pw-toggle aria-label="Show password" aria-pressed="false">
+              <i data-lucide="eye" width="16" class="rc-pw-icon-show"></i>
+              <i data-lucide="eye-off" width="16" class="rc-pw-icon-hide"></i>
+            </button>
           </div>
-          {% if form.password.errors %}<div class="rc-field-error">{{ form.password.errors.0 }}</div>{% endif %}
+          {% if form.password.errors %}<div class="rc-field-error" id="id_password_error">{{ form.password.errors.0 }}</div>{% endif %}
         </div>
 
-        <button type="submit" class="btn-rc btn-rc-primary w-100 justify-content-center">
-          Log in <i data-lucide="arrow-right" width="18"></i>
+        <label class="rc-remember-row">
+          <input type="checkbox" name="{{ form.remember_me.html_name }}" {% if form.remember_me.value|default:True %}checked{% endif %}>
+          <span>Remember me</span>
+        </label>
+
+        <button type="submit" class="btn-rc btn-rc-primary w-100 justify-content-center rc-auth-submit">
+          <span class="rc-btn-label">Log in <i data-lucide="arrow-right" width="18"></i></span>
+          <span class="rc-btn-spinner" aria-hidden="true"></span>
         </button>
       </form>
 
-      <div class="rc-auth-footer">
-        New here? <a href="{% url 'register' %}">Create an account</a>
+      <div class="rc-auth-divider"><span>or continue with</span></div>
+
+      <div class="rc-social-row">
+        <button type="button" class="rc-social-btn" disabled title="Coming soon">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.87 2.7-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.17.29-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+        <button type="button" class="rc-social-btn" disabled title="Coming soon">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          Continue with GitHub
+        </button>
+      </div>
+
+      <p class="rc-auth-footer">
+        Don't have an account? <a href="{% url 'register' %}">Create your free account</a>
+      </p>
+
+      <div class="rc-auth-legal">
+        © 2026 RealCode Academy &nbsp;·&nbsp;
+        <a href="#">Terms</a> &nbsp;·&nbsp;
+        <a href="#">Privacy</a> &nbsp;·&nbsp;
+        <a href="#">Help</a>
       </div>
     </div>
   </div>

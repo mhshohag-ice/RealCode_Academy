@@ -1,0 +1,4 @@
+<div class="auth-tabs">
+  <a href="{% url 'register' %}" class="auth-tab {% if active == 'register' %}active{% endif %}">Register</a>
+  <a href="{% url 'login' %}" class="auth-tab {% if active == 'login' %}active{% endif %}">Sign In</a>
+</div>

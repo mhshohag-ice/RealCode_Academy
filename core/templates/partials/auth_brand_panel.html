@@ -1,46 +1,25 @@
 <div class="auth-brand-panel">
-  <div class="auth-brand-grid"></div>
+  <a href="{% url 'home' %}" class="auth-brand-logo">
+    <span class="rc-logo-mark" style="background:rgba(255,255,255,0.2);">R</span>
+    RealCode<span style="opacity:.7;">.</span>
+  </a>
 
-  <div class="auth-brand-content">
-    <a href="{% url 'home' %}" class="auth-brand-logo">
-      <span class="rc-logo-mark">R</span>
-      RealCode<span style="opacity:.6;">.</span>
-    </a>
+  <div class="auth-brand-snippets" aria-hidden="true">
+    <pre class="auth-snippet auth-snippet-1"><code>for student in learners:
+    student.build()</code></pre>
+    <pre class="auth-snippet auth-snippet-2"><code>button.addEventListener(
+  "click", run
+);</code></pre>
+    <pre class="auth-snippet auth-snippet-3"><code>if (distance &lt; 20) {
+    ledOn();
+}</code></pre>
+  </div>
 
-    <h2 class="auth-brand-headline">Code that runs for real.<br>Not slides. Not videos.</h2>
-    <p class="auth-brand-sub">Step through real JavaScript, Python, C, and Arduino execution — variable by variable, line by line.</p>
-
-    <div class="auth-code-window">
-      <div class="auth-code-titlebar">
-        <span class="auth-code-dot" style="background:#ef4444;"></span>
-        <span class="auth-code-dot" style="background:#f59e0b;"></span>
-        <span class="auth-code-dot" style="background:#22c55e;"></span>
-        <span class="auth-code-filename">cart.py</span>
-      </div>
-      <pre class="auth-code-body"><code><span class="ac-kw">def</span> <span class="ac-fn">cart_total</span>(prices):
-    total = <span class="ac-num">0</span>
-    <span class="ac-kw">for</span> price <span class="ac-kw">in</span> prices:
-        total += price
-    <span class="ac-kw">return</span> total
-
-cart = [<span class="ac-num">19.99</span>, <span class="ac-num">45.00</span>, <span class="ac-num">7.50</span>]
-<span class="ac-var">checkout</span> = cart_total(cart)
-<span class="ac-fn">print</span>(<span class="ac-str">"Total: $"</span>, checkout)</code></pre>
-      <div class="auth-code-output"><i data-lucide="terminal" width="12"></i> Total: $72.49</div>
-    </div>
-
-    <div class="auth-brand-stats">
-      <div><strong>50k+</strong><span>Students</span></div>
-      <div><strong>4</strong><span>Live languages</span></div>
-      <div><strong>4.9</strong><span>Avg. rating</span></div>
-    </div>
-
-    <div class="auth-testimonial">
-      <p>"I finally understood recursion by watching it execute, not just reading about it."</p>
-      <div class="auth-testimonial-who">
-        <span class="auth-testimonial-avatar">J</span>
-        Jordan · self-taught developer
-      </div>
+  <div class="auth-brand-headline-wrap">
+    <span class="auth-accent-line"></span>
+    <div>
+      <h1 class="auth-brand-headline">Learn programming<br>by <span class="auth-accent-word">doing</span>.</h1>
+      <p class="auth-brand-subtext">Build real programs, control virtual hardware, and see your code run — in JavaScript, Python, C and Arduino.</p>
     </div>
   </div>
 </div>

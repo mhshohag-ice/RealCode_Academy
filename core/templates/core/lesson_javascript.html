@@ -12,7 +12,7 @@
   .lesson-crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
   .lesson-shell { display: flex; flex-direction: column; height: calc(100vh - 73px); }
   .lesson-shell.fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; background: var(--bg); }
-  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 24px; }
   .lesson-shell.fullscreen .lesson-content-area { padding: 0; gap: 0; }
   .lesson-shell.fullscreen .lesson-workspace, .lesson-shell.fullscreen .ai-tutor { border-radius: 0; box-shadow: none; }
 
@@ -57,7 +57,7 @@
   #output-log .err { color: var(--danger); }
 
   .ai-tutor {
-    height: 220px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
+    height: 160px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
     background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: height 200ms ease;
   }
   .lesson-content-area.workspace-expanded .ai-tutor { height: 56px; }

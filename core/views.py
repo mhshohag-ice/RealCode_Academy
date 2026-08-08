@@ -2,10 +2,23 @@ import json
 
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from .forms import RegisterForm
+from .forms import LoginForm, RegisterForm
+
+
+class RealCodeLoginView(LoginView):
+    template_name = "registration/login.html"
+    authentication_form = LoginForm
+    redirect_authenticated_user = True
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if not form.cleaned_data.get("remember_me"):
+            self.request.session.set_expiry(0)
+        return response
 
 FEATURES = [
     {"lang": "HTML", "title": "Interactive Browser", "icon": "layout", "color": "primary", "slug": None},

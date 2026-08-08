@@ -57,3 +57,25 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   document.querySelector('.rc-mobile-nav')?.classList.toggle('open');
 });
+
+// Password visibility toggle
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-pw-toggle]');
+  if (!btn) return;
+  const input = btn.closest('.rc-input-wrap')?.querySelector('input');
+  if (!input) return;
+  const showing = btn.getAttribute('aria-pressed') === 'true';
+  input.type = showing ? 'password' : 'text';
+  btn.setAttribute('aria-pressed', String(!showing));
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+});
+
+// Auth form submit: loading state, prevent double submit
+document.querySelectorAll('.rc-auth-form').forEach((form) => {
+  form.addEventListener('submit', () => {
+    const submitBtn = form.querySelector('.rc-auth-submit');
+    if (!submitBtn || submitBtn.classList.contains('is-loading')) return;
+    submitBtn.classList.add('is-loading');
+    submitBtn.disabled = true;
+  });
+});

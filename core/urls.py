@@ -7,6 +7,7 @@ urlpatterns = [
     path("labs/", views.labs, name="labs"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("register/", views.register, name="register"),
+    path("login/", views.RealCodeLoginView.as_view(), name="login"),
     path("", include("django.contrib.auth.urls")),
     path("courses/javascript/", views.course_javascript, name="course_javascript"),
     path("lesson/javascript/<slug:slug>/", views.lesson_javascript, name="lesson_javascript"),
