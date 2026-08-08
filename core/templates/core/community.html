@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+{% block title %}Community — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:64px 0 32px;">
+  <div class="mx-auto text-center" style="max-width:640px;">
+    <span class="badge-rc badge-soon mb-3"><i data-lucide="hammer" width="14"></i> Coming soon</span>
+    <h1 style="font-size:40px;">Community is being built.</h1>
+    <p class="text-secondary" style="font-size:17px;">
+      There's no forum or chat here yet — we didn't want to launch an empty room and call it a community.
+      Here's what we're planning to build once there are enough people learning here to make it worthwhile.
+    </p>
+  </div>
+</section>
+
+<section class="container-max" style="padding:24px 0 56px;" data-animate-section>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card-rc card-rc-soon h-100">
+        <div class="feature-icon"><i data-lucide="message-circle" width="24"></i></div>
+        <h5 class="mb-2">Lesson discussion</h5>
+        <p class="text-secondary mb-0">Ask questions and compare approaches on a specific lesson, right where you're stuck.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-rc card-rc-soon h-100">
+        <div class="feature-icon"><i data-lucide="trophy" width="24"></i></div>
+        <h5 class="mb-2">Challenge showcase</h5>
+        <p class="text-secondary mb-0">Share how you solved a lesson's extension challenge and see other people's solutions.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-rc card-rc-soon h-100">
+        <div class="feature-icon"><i data-lucide="users" width="24"></i></div>
+        <h5 class="mb-2">Study pairing</h5>
+        <p class="text-secondary mb-0">Get matched with someone learning the same course track to work through it together.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-max" style="margin-bottom:60px;" data-animate-section>
+  <div class="card-rc card-rc-glass" style="background:linear-gradient(135deg, var(--primary), var(--accent)); border:none;">
+    <div class="row align-items-center g-4 text-white py-3">
+      <div class="col-lg-8">
+        <h2 class="text-white mb-2">In the meantime, there are real challenges to solve</h2>
+        <p class="mb-0" style="opacity:.9;">Every lesson has an extension challenge built in — no waiting required.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="{% url 'challenges' %}" class="btn-rc" style="background:#fff; color:var(--primary);">
+          Browse Challenges <i data-lucide="arrow-right" width="18"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

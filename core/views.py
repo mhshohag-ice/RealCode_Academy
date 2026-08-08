@@ -922,6 +922,35 @@ def about(request):
     return render(request, "core/about.html", {"features": features_with_course_urls()})
 
 
+CHALLENGE_COURSES = [
+    {"lang": "JavaScript", "icon": "zap", "lessons": lambda: JS_LESSONS, "lesson_url_name": "lesson_javascript"},
+    {"lang": "Python", "icon": "terminal", "lessons": lambda: PYTHON_LESSONS, "lesson_url_name": "lesson_python"},
+    {"lang": "C", "icon": "cpu", "lessons": lambda: C_LESSONS, "lesson_url_name": "lesson_c"},
+    {"lang": "Arduino", "icon": "circuit-board", "lessons": lambda: ARDUINO_LESSONS, "lesson_url_name": "lesson_arduino"},
+]
+
+
+def challenges(request):
+    groups = []
+    for course in CHALLENGE_COURSES:
+        items = []
+        for lesson in course["lessons"]():
+            challenge_text = lesson.get("hints", {}).get("challenge")
+            if not challenge_text:
+                continue
+            items.append({
+                "title": lesson["title"],
+                "text": challenge_text.removeprefix("Challenge: "),
+                "url": reverse(course["lesson_url_name"], args=[lesson["slug"]]),
+            })
+        groups.append({"lang": course["lang"], "icon": course["icon"], "items": items})
+    return render(request, "core/challenges.html", {"groups": groups})
+
+
+def community(request):
+    return render(request, "core/community.html")
+
+
 @login_required
 def dashboard(request):
     context = {
