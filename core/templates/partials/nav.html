@@ -18,7 +18,16 @@
       <button class="rc-icon-btn d-none d-md-flex" title="Search"><i data-lucide="search" width="18"></i></button>
       <button class="rc-icon-btn d-none d-md-flex" title="Notifications"><i data-lucide="bell" width="18"></i></button>
       <button class="rc-icon-btn" data-theme-toggle title="Toggle dark mode"><i data-lucide="moon" width="18"></i></button>
-      <a href="{% url 'dashboard' %}" class="rc-avatar" title="Profile">A</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'dashboard' %}" class="rc-avatar" title="{{ user.username }}">{{ user.username|first|upper }}</a>
+        <form method="post" action="{% url 'logout' %}" class="d-none d-md-block m-0">
+          {% csrf_token %}
+          <button type="submit" class="rc-icon-btn" title="Log out"><i data-lucide="log-out" width="18"></i></button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn-rc btn-rc-ghost d-none d-md-inline-flex" style="padding:8px 16px; font-size:14px;">Log in</a>
+        <a href="{% url 'register' %}" class="btn-rc btn-rc-primary d-none d-md-inline-flex" style="padding:8px 16px; font-size:14px;">Sign up</a>
+      {% endif %}
       <button class="rc-icon-btn d-lg-none" data-mobile-nav-toggle title="Menu"><i data-lucide="menu" width="20"></i></button>
     </div>
   </div>
@@ -30,6 +39,15 @@
     <a href="#">Community</a>
     <a href="#">Pricing</a>
     <a href="#">About</a>
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'logout' %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" style="padding:14px 32px; border-top:1px solid var(--border); font-weight:500; width:100%; text-align:left; background:none; border-left:none; border-right:none; border-bottom:none; color:var(--text);">Log out</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}">Log in</a>
+      <a href="{% url 'register' %}">Sign up</a>
+    {% endif %}
   </div>
 </nav>
 

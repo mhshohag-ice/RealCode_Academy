@@ -1,0 +1,72 @@
+{% extends "core/base.html" %}
+{% block title %}Sign Up — RealCode Academy{% endblock %}
+{% block content %}
+<div class="auth-split">
+  {% include "partials/auth_brand_panel.html" %}
+
+  <div class="auth-form-panel">
+    <div class="rc-auth-card">
+      <div class="rc-auth-icon"><i data-lucide="user-plus" width="24"></i></div>
+      <h2 class="mb-1">Create your account</h2>
+      <p class="text-secondary mb-4">Start learning by building — free forever.</p>
+
+      {% if form.non_field_errors %}
+      <div class="rc-form-error"><i data-lucide="alert-circle" width="16"></i> {{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="rc-field">
+          <label class="rc-field-label" for="{{ form.username.id_for_label }}">Username</label>
+          <div class="rc-input-wrap">
+            <i data-lucide="user" width="16"></i>
+            <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
+                   class="rc-input" placeholder="yourname" value="{{ form.username.value|default:'' }}" autofocus required>
+          </div>
+          {% if form.username.errors %}<div class="rc-field-error">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="rc-field">
+          <label class="rc-field-label" for="{{ form.email.id_for_label }}">Email</label>
+          <div class="rc-input-wrap">
+            <i data-lucide="mail" width="16"></i>
+            <input type="email" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}"
+                   class="rc-input" placeholder="you@example.com" value="{{ form.email.value|default:'' }}" required>
+          </div>
+          {% if form.email.errors %}<div class="rc-field-error">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="rc-field">
+          <label class="rc-field-label" for="{{ form.password1.id_for_label }}">Password</label>
+          <div class="rc-input-wrap">
+            <i data-lucide="lock" width="16"></i>
+            <input type="password" name="{{ form.password1.html_name }}" id="{{ form.password1.id_for_label }}"
+                   class="rc-input" placeholder="••••••••" required>
+          </div>
+          {% if form.password1.errors %}<div class="rc-field-error">{{ form.password1.errors.0 }}</div>{% endif %}
+          <div class="rc-field-help">At least 8 characters. Avoid common passwords.</div>
+        </div>
+
+        <div class="rc-field">
+          <label class="rc-field-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+          <div class="rc-input-wrap">
+            <i data-lucide="lock" width="16"></i>
+            <input type="password" name="{{ form.password2.html_name }}" id="{{ form.password2.id_for_label }}"
+                   class="rc-input" placeholder="••••••••" required>
+          </div>
+          {% if form.password2.errors %}<div class="rc-field-error">{{ form.password2.errors.0 }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn-rc btn-rc-primary w-100 justify-content-center">
+          Create account <i data-lucide="arrow-right" width="18"></i>
+        </button>
+      </form>
+
+      <div class="rc-auth-footer">
+        Already have an account? <a href="{% url 'login' %}">Log in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

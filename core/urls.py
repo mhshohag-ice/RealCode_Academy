@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 urlpatterns = [
@@ -6,6 +6,8 @@ urlpatterns = [
     path("courses/", views.courses, name="courses"),
     path("labs/", views.labs, name="labs"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("register/", views.register, name="register"),
+    path("", include("django.contrib.auth.urls")),
     path("courses/javascript/", views.course_javascript, name="course_javascript"),
     path("lesson/javascript/<slug:slug>/", views.lesson_javascript, name="lesson_javascript"),
     path("courses/python/", views.course_python, name="course_python"),

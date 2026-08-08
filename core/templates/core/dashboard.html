@@ -5,7 +5,7 @@
 
   <div class="d-flex flex-wrap justify-content-between align-items-end mb-5 gap-3" data-animate-section>
     <div>
-      <h1 style="font-size:32px;">Welcome back, Alex <span style="font-size:24px;">👋</span></h1>
+      <h1 style="font-size:32px;">Welcome back, {{ user.first_name|default:user.username }} <span style="font-size:24px;">👋</span></h1>
       <p class="text-secondary mb-0">Pick up where you left off.</p>
     </div>
     <div class="d-flex gap-2">

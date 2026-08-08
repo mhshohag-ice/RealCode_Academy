@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% block title %}Log In — RealCode Academy{% endblock %}
+{% block content %}
+<div class="auth-split">
+  {% include "partials/auth_brand_panel.html" %}
+
+  <div class="auth-form-panel">
+    <div class="rc-auth-card">
+      <div class="rc-auth-icon"><i data-lucide="log-in" width="24"></i></div>
+      <h2 class="mb-1">Welcome back</h2>
+      <p class="text-secondary mb-4">Log in to continue where you left off.</p>
+
+      {% if form.non_field_errors %}
+      <div class="rc-form-error"><i data-lucide="alert-circle" width="16"></i> {{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="rc-field">
+          <label class="rc-field-label" for="{{ form.username.id_for_label }}">Username</label>
+          <div class="rc-input-wrap">
+            <i data-lucide="user" width="16"></i>
+            <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
+                   class="rc-input" placeholder="yourname" value="{{ form.username.value|default:'' }}" autofocus required>
+          </div>
+          {% if form.username.errors %}<div class="rc-field-error">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="rc-field">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="rc-field-label mb-0" for="{{ form.password.id_for_label }}">Password</label>
+            <a href="{% url 'password_reset' %}" style="font-size:12.5px; color:var(--primary); font-weight:600;">Forgot password?</a>
+          </div>
+          <div class="rc-input-wrap">
+            <i data-lucide="lock" width="16"></i>
+            <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}"
+                   class="rc-input" placeholder="••••••••" required>
+          </div>
+          {% if form.password.errors %}<div class="rc-field-error">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn-rc btn-rc-primary w-100 justify-content-center">
+          Log in <i data-lucide="arrow-right" width="18"></i>
+        </button>
+      </form>
+
+      <div class="rc-auth-footer">
+        New here? <a href="{% url 'register' %}">Create an account</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
