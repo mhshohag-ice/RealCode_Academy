@@ -7,11 +7,36 @@
 
   <div class="feature-grid">
     {% for f in features %}
-    {% if f.course_url %}<a href="{{ f.course_url }}" class="card-rc hoverable">{% else %}<div class="card-rc hoverable">{% endif %}
-      <div class="feature-icon"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+    {% if f.course_url %}
+    <a href="{{ f.course_url }}" class="card-rc hoverable lab-card">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="feature-icon mb-0"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+        <i data-lucide="arrow-up-right" width="18" class="lab-card-arrow"></i>
+      </div>
+      <h5 class="mb-1">{{ f.lang }} Lab</h5>
+      <p class="text-secondary mb-3">{{ f.title }}</p>
+      <div class="d-flex justify-content-between text-secondary" style="font-size:13px;">
+        <span><i data-lucide="book-open" width="14"></i> {{ f.lesson_count }} lessons</span>
+        <span><i data-lucide="clock" width="14"></i> {{ f.duration_label }}</span>
+      </div>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <h2 style="font-size:20px; margin:56px 0 20px;" class="text-secondary">Coming soon</h2>
+  <div class="feature-grid">
+    {% for f in features %}
+    {% if not f.course_url %}
+    <div class="card-rc card-rc-soon">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="feature-icon mb-0"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+        <span class="badge-rc badge-soon">Coming soon</span>
+      </div>
       <h5 class="mb-1">{{ f.lang }} Lab</h5>
       <p class="text-secondary mb-0">{{ f.title }}</p>
-    {% if f.course_url %}</a>{% else %}</div>{% endif %}
+    </div>
+    {% endif %}
     {% endfor %}
   </div>
 </section>

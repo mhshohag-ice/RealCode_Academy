@@ -92,13 +92,24 @@
 
   <div class="feature-grid">
     {% for f in features %}
-    <div class="card-rc hoverable">
+    {% if f.course_url %}
+    <a href="{{ f.course_url }}" class="card-rc hoverable">
       <div class="feature-icon">
         <i data-lucide="{{ f.icon }}" width="24"></i>
       </div>
       <h5 class="mb-1">Learn {{ f.lang }}</h5>
       <p class="text-secondary mb-0">{{ f.title }}</p>
+    </a>
+    {% else %}
+    <div class="card-rc card-rc-soon">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="feature-icon"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+        <span class="badge-rc badge-soon">Soon</span>
+      </div>
+      <h5 class="mb-1">Learn {{ f.lang }}</h5>
+      <p class="text-secondary mb-0">{{ f.title }}</p>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
 </section>

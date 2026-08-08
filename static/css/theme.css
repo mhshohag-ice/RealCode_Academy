@@ -153,6 +153,13 @@ a { text-decoration: none; color: inherit; }
 .badge-success { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
 .badge-warning { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
 .badge-accent  { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.badge-soon { background: var(--border); color: var(--text-secondary); }
+
+.card-rc-soon { opacity: 0.6; cursor: default; }
+.card-rc-soon:hover { transform: none; box-shadow: var(--shadow-soft); }
+
+.lab-card-arrow { color: var(--text-secondary); opacity: 0; transform: translate(-4px, 4px); transition: all var(--transition); }
+.lab-card:hover .lab-card-arrow { opacity: 1; transform: translate(0, 0); color: var(--primary); }
 
 /* ---------- Progress ---------- */
 .progress-rc {

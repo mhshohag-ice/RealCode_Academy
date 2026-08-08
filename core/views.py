@@ -868,10 +868,30 @@ JS_LESSONS = [
 
 
 def home(request):
-    return render(request, "core/home.html", {"features": FEATURES})
+    return render(request, "core/home.html", {"features": features_with_course_urls()})
 
 
 COURSE_URL_NAMES = {"python": "course_python", "c": "course_c", "arduino": "course_arduino", "javascript": "course_javascript"}
+
+
+def _course_stats(lessons):
+    total_minutes = sum(int(l["duration"].split()[0]) for l in lessons)
+    hours, minutes = divmod(total_minutes, 60)
+    if hours and minutes:
+        duration_label = f"{hours}h {minutes}m"
+    elif hours:
+        duration_label = f"{hours}h"
+    else:
+        duration_label = f"{minutes}m"
+    return len(lessons), duration_label
+
+
+COURSE_LESSON_SETS = {
+    "javascript": lambda: JS_LESSONS,
+    "python": lambda: PYTHON_LESSONS,
+    "c": lambda: C_LESSONS,
+    "arduino": lambda: ARDUINO_LESSONS,
+}
 
 
 def features_with_course_urls():
@@ -880,6 +900,8 @@ def features_with_course_urls():
         entry = dict(f)
         url_name = COURSE_URL_NAMES.get(f["slug"])
         entry["course_url"] = reverse(url_name) if url_name else None
+        if f["slug"] in COURSE_LESSON_SETS:
+            entry["lesson_count"], entry["duration_label"] = _course_stats(COURSE_LESSON_SETS[f["slug"]]())
         features.append(entry)
     return features
 
@@ -922,7 +944,8 @@ def dashboard(request):
 
 
 def course_python(request):
-    return render(request, "core/course_python.html", {"lessons": PYTHON_LESSONS})
+    _, duration_label = _course_stats(PYTHON_LESSONS)
+    return render(request, "core/course_python.html", {"lessons": PYTHON_LESSONS, "duration_label": duration_label})
 
 
 def lesson_python(request, slug):
@@ -938,7 +961,8 @@ def lesson_python(request, slug):
 
 
 def course_c(request):
-    return render(request, "core/course_c.html", {"lessons": C_LESSONS})
+    _, duration_label = _course_stats(C_LESSONS)
+    return render(request, "core/course_c.html", {"lessons": C_LESSONS, "duration_label": duration_label})
 
 
 def lesson_c(request, slug):
@@ -955,7 +979,8 @@ def lesson_c(request, slug):
 
 
 def course_arduino(request):
-    return render(request, "core/course_arduino.html", {"lessons": ARDUINO_LESSONS})
+    _, duration_label = _course_stats(ARDUINO_LESSONS)
+    return render(request, "core/course_arduino.html", {"lessons": ARDUINO_LESSONS, "duration_label": duration_label})
 
 
 def lesson_arduino(request, slug):
@@ -972,7 +997,8 @@ def lesson_arduino(request, slug):
 
 
 def course_javascript(request):
-    return render(request, "core/course_javascript.html", {"lessons": JS_LESSONS})
+    _, duration_label = _course_stats(JS_LESSONS)
+    return render(request, "core/course_javascript.html", {"lessons": JS_LESSONS, "duration_label": duration_label})
 
 
 def lesson_javascript(request, slug):
