@@ -32,10 +32,7 @@
         </div>
 
         <div class="rc-field">
-          <div class="d-flex flex-wrap justify-content-between align-items-center mb-1" style="row-gap:4px;">
-            <label class="rc-field-label mb-0" for="{{ form.password.id_for_label }}">Password</label>
-            <a href="{% url 'password_reset' %}" style="font-size:12.5px; color:var(--primary); font-weight:600;">Forgot password?</a>
-          </div>
+          <label class="rc-field-label" for="{{ form.password.id_for_label }}">Password</label>
           <div class="rc-input-wrap">
             <i data-lucide="lock" width="16"></i>
             <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}"
@@ -47,6 +44,7 @@
             </button>
           </div>
           {% if form.password.errors %}<div class="rc-field-error" id="id_password_error">{{ form.password.errors.0 }}</div>{% endif %}
+          <a href="{% url 'password_reset' %}" class="rc-forgot-link">Forgot password?</a>
         </div>
 
         <label class="rc-remember-row">
