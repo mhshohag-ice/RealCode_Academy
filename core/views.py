@@ -914,6 +914,14 @@ def labs(request):
     return render(request, "core/labs.html", {"features": features_with_course_urls()})
 
 
+def pricing(request):
+    return render(request, "core/pricing.html")
+
+
+def about(request):
+    return render(request, "core/about.html", {"features": features_with_course_urls()})
+
+
 @login_required
 def dashboard(request):
     context = {

@@ -1,0 +1,75 @@
+{% extends "core/base.html" %}
+{% block title %}About — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:64px 0 32px;">
+  <div class="mx-auto text-center" style="max-width:680px;">
+    <span class="badge-rc badge-primary mb-3"><i data-lucide="compass" width="14"></i> Our mission</span>
+    <h1 style="font-size:40px;">Learn programming by doing, not by watching.</h1>
+    <p class="text-secondary" style="font-size:17px;">
+      Most people learn to code by reading slides or pausing videos to copy code they don't fully understand.
+      RealCode Academy is built around a different idea: put real, runnable code in front of you,
+      let you change it, and show you exactly what happens next.
+    </p>
+  </div>
+</section>
+
+<section class="container-max" style="padding:48px 0;" data-animate-section>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card-rc h-100">
+        <div class="feature-icon"><i data-lucide="mouse-pointer-click" width="24"></i></div>
+        <h5 class="mb-2">Interactive, not passive</h5>
+        <p class="text-secondary mb-0">Every lesson is a live simulation — edit the code, run it, and watch variables, sensors and output change in real time.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-rc h-100">
+        <div class="feature-icon"><i data-lucide="target" width="24"></i></div>
+        <h5 class="mb-2">Grounded in real scenarios</h5>
+        <p class="text-secondary mb-0">Lessons are built around things people actually build — checkout totals, login gates, parking sensors — not abstract toy examples.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-rc h-100">
+        <div class="feature-icon"><i data-lucide="unlock" width="24"></i></div>
+        <h5 class="mb-2">Honest about what's here</h5>
+        <p class="text-secondary mb-0">We'd rather ship four courses that work well than ten that don't exist yet. What you see in the course list is what you actually get.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-max" style="padding:56px 0;" data-animate-section>
+  <div class="text-center mx-auto mb-5" style="max-width:640px;">
+    <h2 style="font-size:32px;">What you can build here today</h2>
+    <p class="text-secondary">Four course tracks, each with hands-on, runnable lessons.</p>
+  </div>
+  <div class="feature-grid">
+    {% for f in features %}
+    {% if f.course_url %}
+    <a href="{{ f.course_url }}" class="card-rc hoverable">
+      <div class="feature-icon"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+      <h5 class="mb-1">Learn {{ f.lang }}</h5>
+      <p class="text-secondary mb-0">{{ f.title }}</p>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container-max" style="margin-top:60px;" data-animate-section>
+  <div class="card-rc card-rc-glass" style="background:linear-gradient(135deg, var(--primary), var(--accent)); border:none;">
+    <div class="row align-items-center g-4 text-white py-3">
+      <div class="col-lg-8">
+        <h2 class="text-white mb-2">Ready to start building?</h2>
+        <p class="mb-0" style="opacity:.9;">It's free — jump into any course and start writing real code.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="{% url 'register' %}" class="btn-rc" style="background:#fff; color:var(--primary);">
+          Get Started Free <i data-lucide="arrow-right" width="18"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+{% block title %}Pricing — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:64px 0 32px;">
+  <div class="text-center mx-auto" style="max-width:640px;">
+    <span class="badge-rc badge-primary mb-3"><i data-lucide="tag" width="14"></i> Pricing</span>
+    <h1 style="font-size:40px;">Free, while we build this out.</h1>
+    <p class="text-secondary" style="font-size:17px;">
+      RealCode Academy is in early access. Every course, lab, and lesson is free to use — no card, no trial, no catch.
+    </p>
+  </div>
+</section>
+
+<section class="container-max" style="padding-bottom:80px;">
+  <div class="card-rc mx-auto" style="max-width:440px; text-align:center; padding:48px 40px;">
+    <span class="badge-rc badge-accent mb-3">Current plan</span>
+    <div style="font-size:48px; font-weight:800; letter-spacing:-0.02em;">$0</div>
+    <p class="text-secondary mb-4">Free, forever — for now</p>
+
+    <ul class="list-unstyled text-start d-flex flex-column gap-3 mb-4">
+      <li class="d-flex align-items-start gap-2">
+        <i data-lucide="check" width="18" class="text-success flex-shrink-0 mt-1"></i>
+        <span>Full access to JavaScript, Python, C and Arduino courses</span>
+      </li>
+      <li class="d-flex align-items-start gap-2">
+        <i data-lucide="check" width="18" class="text-success flex-shrink-0 mt-1"></i>
+        <span>Interactive labs and simulations, run in your browser</span>
+      </li>
+      <li class="d-flex align-items-start gap-2">
+        <i data-lucide="check" width="18" class="text-success flex-shrink-0 mt-1"></i>
+        <span>Progress tracking, XP, streaks and achievements</span>
+      </li>
+      <li class="d-flex align-items-start gap-2">
+        <i data-lucide="check" width="18" class="text-success flex-shrink-0 mt-1"></i>
+        <span>AI tutor for hints while you're stuck on a lesson</span>
+      </li>
+    </ul>
+
+    <a href="{% url 'register' %}" class="btn-rc btn-rc-primary w-100 justify-content-center">
+      Get started free <i data-lucide="arrow-right" width="18"></i>
+    </a>
+  </div>
+
+  <p class="text-secondary text-center mt-4" style="font-size:14px;">
+    Have questions about what's coming next? <a href="{% url 'about' %}" style="color:var(--primary); font-weight:600;">Read about the project</a>.
+  </p>
+</section>
+{% endblock %}

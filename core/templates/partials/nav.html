@@ -10,8 +10,8 @@
       <a href="{% url 'labs' %}">Labs</a>
       <a href="#">Projects</a>
       <a href="#">Community</a>
-      <a href="#">Pricing</a>
-      <a href="#">About</a>
+      <a href="{% url 'pricing' %}">Pricing</a>
+      <a href="{% url 'about' %}">About</a>
     </div>
 
     <div class="rc-nav-actions">
@@ -37,8 +37,8 @@
     <a href="{% url 'labs' %}">Labs</a>
     <a href="#">Projects</a>
     <a href="#">Community</a>
-    <a href="#">Pricing</a>
-    <a href="#">About</a>
+    <a href="{% url 'pricing' %}">Pricing</a>
+    <a href="{% url 'about' %}">About</a>
     {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="m-0">
         {% csrf_token %}
