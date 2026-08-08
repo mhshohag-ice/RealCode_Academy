@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% block title %}Courses — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:64px 0;">
+  <h1 style="font-size:40px;">Courses</h1>
+  <p class="text-secondary mb-5" style="max-width:560px;">Structured paths from first line of code to real projects.</p>
+
+  <div class="feature-grid">
+    {% for f in features %}
+    {% if f.course_url %}<a href="{{ f.course_url }}" class="card-rc hoverable">{% else %}<div class="card-rc hoverable">{% endif %}
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="feature-icon mb-0"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+        <span class="badge-rc badge-primary">Beginner</span>
+      </div>
+      <h5 class="mb-1">Learn {{ f.lang }}</h5>
+      <p class="text-secondary mb-3">{{ f.title }}</p>
+      <div class="progress-rc mb-2"><div class="progress-rc-fill" style="width:0%"></div></div>
+      <div class="d-flex justify-content-between text-secondary" style="font-size:13px;">
+        <span><i data-lucide="book-open" width="14"></i> 12 lessons</span>
+        <span><i data-lucide="clock" width="14"></i> 4h</span>
+      </div>
+    {% if f.course_url %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

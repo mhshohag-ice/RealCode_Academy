@@ -1,0 +1,125 @@
+{% extends "core/base.html" %}
+{% block title %}Dashboard — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:48px 0 100px;">
+
+  <div class="d-flex flex-wrap justify-content-between align-items-end mb-5 gap-3" data-animate-section>
+    <div>
+      <h1 style="font-size:32px;">Welcome back, Alex <span style="font-size:24px;">👋</span></h1>
+      <p class="text-secondary mb-0">Pick up where you left off.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge-rc badge-warning"><i data-lucide="flame" width="14"></i> {{ streak }}-day streak</span>
+      <span class="badge-rc badge-accent"><i data-lucide="coins" width="14"></i> {{ coins }} coins</span>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4" data-animate-section>
+    <div class="col-6 col-lg-3">
+      <div class="card-rc hoverable text-center">
+        <i data-lucide="star" width="22" class="text-secondary mb-2"></i>
+        <div class="count-up" style="font-size:28px; font-weight:800;" data-count-to="{{ xp }}">0</div>
+        <div class="text-secondary" style="font-size:13px;">Total XP</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-rc hoverable text-center">
+        <i data-lucide="trophy" width="22" class="text-secondary mb-2"></i>
+        <div class="count-up" style="font-size:28px; font-weight:800;" data-count-to="{{ level }}">0</div>
+        <div class="text-secondary" style="font-size:13px;">Level</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-rc hoverable text-center">
+        <i data-lucide="flame" width="22" class="text-secondary mb-2"></i>
+        <div class="count-up" style="font-size:28px; font-weight:800;" data-count-to="{{ streak }}">0</div>
+        <div class="text-secondary" style="font-size:13px;">Day Streak</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card-rc hoverable text-center">
+        <i data-lucide="coins" width="22" class="text-secondary mb-2"></i>
+        <div class="count-up" style="font-size:28px; font-weight:800;" data-count-to="{{ coins }}">0</div>
+        <div class="text-secondary" style="font-size:13px;">Coins</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      <div class="card-rc mb-4" data-animate-section>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Weekly Goal</h5>
+          <span class="text-secondary" style="font-size:13px;">{{ weekly_goal_pct }}%</span>
+        </div>
+        <div class="progress-rc"><div class="progress-rc-fill" data-progress-to="{{ weekly_goal_pct }}"></div></div>
+      </div>
+
+      <div class="card-rc mb-4">
+        <h5 class="mb-4">Continue Learning</h5>
+        <div class="d-flex flex-column gap-3">
+          {% for l in recent_lessons %}
+          <a href="{{ l.url }}" class="d-flex align-items-center gap-3 p-3" style="border-radius:var(--radius-md); border:1px solid var(--border); transition:all var(--transition);">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="play" width="18" class="text-secondary"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div style="font-weight:600;">{{ l.title }}</div>
+              <div class="text-secondary" style="font-size:13px;">{{ l.course }}</div>
+              <div class="progress-rc mt-2" style="height:6px;"><div class="progress-rc-fill" data-progress-to="{{ l.pct }}"></div></div>
+            </div>
+            <i data-lucide="chevron-right" width="18" class="text-secondary"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-rc">
+        <h5 class="mb-4">Achievements</h5>
+        <div class="row g-3">
+          {% for a in achievements %}
+          <div class="col-6 col-md-3 text-center">
+            <div style="width:56px;height:56px;border-radius:16px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;
+              {% if a.unlocked %}background:linear-gradient(135deg, var(--primary), var(--accent)); color:#fff;{% else %}background:var(--bg); border:1px dashed var(--border); color:var(--text-secondary);{% endif %}">
+              <i data-lucide="{{ a.icon }}" width="24"></i>
+            </div>
+            <div style="font-size:13px; {% if not a.unlocked %}color:var(--text-secondary);{% endif %}">{{ a.name }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card-rc mb-4">
+        <h5 class="mb-4">Leaderboard</h5>
+        <div class="d-flex flex-column gap-3">
+          {% for p in leaderboard %}
+          <div class="d-flex align-items-center gap-3 {% if p.is_user %}p-2{% endif %}"
+               style="{% if p.is_user %}background:var(--bg); border-radius:var(--radius-sm);{% endif %}">
+            <span class="text-secondary" style="width:20px; font-weight:700;">#{{ p.rank }}</span>
+            <div class="rc-avatar" style="width:32px;height:32px;font-size:12px;">{{ p.name|first }}</div>
+            <span class="flex-grow-1" style="font-weight:{% if p.is_user %}700{% else %}500{% endif %};">{{ p.name }}</span>
+            <span class="text-secondary" style="font-size:13px;">{{ p.xp }} XP</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-rc">
+        <h5 class="mb-3">Certificates</h5>
+        <div class="d-flex align-items-center gap-3 p-3 mb-2" style="border-radius:var(--radius-md); border:1px solid var(--border);">
+          <i data-lucide="award" width="24" class="text-secondary"></i>
+          <div>
+            <div style="font-weight:600; font-size:14px;">JavaScript Fundamentals</div>
+            <div class="text-secondary" style="font-size:12px;">In progress — 80%</div>
+          </div>
+        </div>
+        <a href="#" class="btn-rc btn-rc-ghost w-100 justify-content-center">View all <i data-lucide="arrow-right" width="16"></i></a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

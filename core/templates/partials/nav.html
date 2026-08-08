@@ -1,0 +1,44 @@
+<nav class="rc-nav">
+  <div class="container-max">
+    <a href="{% url 'home' %}" class="rc-logo">
+      <span class="rc-logo-mark">R</span>
+      RealCode<span class="text-gradient">.</span>
+    </a>
+
+    <div class="rc-nav-links d-none d-lg-flex">
+      <a href="{% url 'courses' %}">Courses</a>
+      <a href="{% url 'labs' %}">Labs</a>
+      <a href="#">Projects</a>
+      <a href="#">Community</a>
+      <a href="#">Pricing</a>
+      <a href="#">About</a>
+    </div>
+
+    <div class="rc-nav-actions">
+      <button class="rc-icon-btn d-none d-md-flex" title="Search"><i data-lucide="search" width="18"></i></button>
+      <button class="rc-icon-btn d-none d-md-flex" title="Notifications"><i data-lucide="bell" width="18"></i></button>
+      <button class="rc-icon-btn" data-theme-toggle title="Toggle dark mode"><i data-lucide="moon" width="18"></i></button>
+      <a href="{% url 'dashboard' %}" class="rc-avatar" title="Profile">A</a>
+      <button class="rc-icon-btn d-lg-none" data-mobile-nav-toggle title="Menu"><i data-lucide="menu" width="20"></i></button>
+    </div>
+  </div>
+
+  <div class="rc-mobile-nav d-lg-none">
+    <a href="{% url 'courses' %}">Courses</a>
+    <a href="{% url 'labs' %}">Labs</a>
+    <a href="#">Projects</a>
+    <a href="#">Community</a>
+    <a href="#">Pricing</a>
+    <a href="#">About</a>
+  </div>
+</nav>
+
+<style>
+.rc-mobile-nav {
+  max-height: 0; overflow: hidden; background: var(--card); border-bottom: 1px solid var(--border);
+  transition: max-height var(--transition);
+  display: flex; flex-direction: column;
+}
+.rc-mobile-nav.open { max-height: 320px; }
+.rc-mobile-nav a { padding: 14px 32px; border-top: 1px solid var(--border); font-weight: 500; }
+</style>

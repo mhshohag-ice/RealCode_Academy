@@ -1,0 +1,306 @@
+{% extends "core/base.html" %}
+{% block title %}{{ lesson.title }} — Learn JavaScript — RealCode Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { overflow-x: hidden; background: var(--bg); }
+  footer { margin-top: 0 !important; }
+  .lesson-topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--card); flex-shrink: 0;
+  }
+  .lesson-crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .lesson-shell { display: flex; flex-direction: column; height: calc(100vh - 73px); }
+  .lesson-shell.fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; background: var(--bg); }
+  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+  .lesson-shell.fullscreen .lesson-content-area { padding: 0; gap: 0; }
+  .lesson-shell.fullscreen .lesson-workspace, .lesson-shell.fullscreen .ai-tutor { border-radius: 0; box-shadow: none; }
+
+  .lesson-workspace {
+    display: flex; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: var(--shadow-soft); background: var(--card);
+  }
+  .lesson-panel { display: flex; flex-direction: column; min-width: 0; }
+  .lesson-panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 13px 18px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .lesson-panel-body { flex: 1; overflow: auto; }
+  #panel-sim { flex: 0 0 20%; border-right: 1px solid var(--border); }
+  #panel-editor { flex: 1 1 60%; }
+  #panel-output { flex: 0 0 20%; border-left: 1px solid var(--border); }
+
+  .lesson-panel-body::-webkit-scrollbar, .ai-tutor-body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .lesson-panel-body::-webkit-scrollbar-track, .ai-tutor-body::-webkit-scrollbar-track { background: transparent; }
+  .lesson-panel-body::-webkit-scrollbar-thumb, .ai-tutor-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  .lesson-panel-body::-webkit-scrollbar-thumb:hover, .ai-tutor-body::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  .sim-stage {
+    height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--warning) 8%, transparent), transparent 50%);
+    padding: 24px;
+  }
+  .sim-badge {
+    width: 120px; height: 120px; border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border); transition: all 400ms; background: var(--card); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  }
+  .sim-badge.good { border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); box-shadow: 0 0 32px color-mix(in srgb, var(--success) 40%, transparent); }
+  .sim-badge.bad { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); box-shadow: 0 0 32px color-mix(in srgb, var(--danger) 40%, transparent); }
+  .sim-badge.neutral { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+  .sim-status { font-weight: 700; font-size: 16px; text-align: center; }
+  .sim-detail { color: var(--text-secondary); font-size: 13px; text-align: center; }
+
+  #output-log { font-family: var(--font-mono); font-size: 13px; padding: 16px; white-space: pre-wrap; }
+  #output-log .line { padding: 2px 0; }
+  #output-log .ok { color: var(--success); }
+  #output-log .err { color: var(--danger); }
+
+  .ai-tutor {
+    height: 220px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
+    background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: height 200ms ease;
+  }
+  .lesson-content-area.workspace-expanded .ai-tutor { height: 56px; }
+  .lesson-content-area.workspace-expanded .ai-tutor-body,
+  .lesson-content-area.workspace-expanded .ai-tutor-input,
+  .lesson-content-area.workspace-expanded .ai-quick { display: none; }
+  .ai-tutor-head {
+    padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 14px; flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .ai-tutor-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .ai-msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14.5px; line-height: 1.55; }
+  .ai-msg.bot { background: var(--bg); border: 1px solid var(--border); align-self: flex-start; }
+  .ai-msg.user { background: linear-gradient(135deg, var(--warning), var(--primary)); color: #fff; align-self: flex-end; }
+  .ai-tutor-input { display: flex; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .ai-tutor-input input { flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px; background: var(--bg); color: var(--text); }
+  .ai-quick { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 24px 10px; flex-shrink: 0; }
+  .ai-quick button {
+    font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text-secondary); cursor: pointer; transition: all var(--transition);
+  }
+  .ai-quick button:hover { border-color: var(--warning); color: var(--warning); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lesson-shell" id="lesson-shell">
+<div class="lesson-topbar">
+  <div class="lesson-crumb">
+    <a href="{% url 'course_javascript' %}" class="text-secondary">Learn JavaScript</a>
+    <i data-lucide="chevron-right" width="14"></i>
+    <span style="color:var(--text);">{{ lesson.title }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge-rc badge-warning"><i data-lucide="zap" width="14"></i> +40 XP on complete</span>
+    <button class="rc-icon-btn" id="workspace-expand-toggle" title="Expand workspace"><i data-lucide="arrow-up-to-line" width="18"></i></button>
+    <button class="rc-icon-btn" id="fullscreen-toggle" title="Fullscreen"><i data-lucide="maximize-2" width="18"></i></button>
+  </div>
+</div>
+
+<div class="lesson-content-area" id="lesson-content-area">
+<div class="lesson-workspace" id="lesson-workspace">
+
+  <div class="lesson-panel" id="panel-sim">
+    <div class="lesson-panel-head"><i data-lucide="eye" width="14"></i> SIMULATION</div>
+    <div class="lesson-panel-body">
+      <div class="sim-stage">
+        <div class="sim-badge neutral" id="sim-badge">
+          <i data-lucide="help-circle" width="40" id="sim-badge-icon" class="text-secondary"></i>
+        </div>
+        <div class="sim-status text-secondary" id="sim-status">Waiting to run…</div>
+        <div class="sim-detail" id="sim-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-editor">
+    <div class="lesson-panel-head">
+      <i data-lucide="code-2" width="14"></i> CODE
+      <span class="flex-grow-1"></span>
+      <button class="btn-rc btn-rc-primary" style="padding:6px 16px; font-size:13px; background:linear-gradient(135deg, var(--warning), var(--primary));" id="run-btn">
+        <i data-lucide="play" width="14"></i> Run
+      </button>
+    </div>
+    <div class="lesson-panel-body" id="monaco-container" style="background:#1e1e1e;"></div>
+  </div>
+
+  <div class="lesson-panel" id="panel-output">
+    <div class="lesson-panel-head"><i data-lucide="terminal" width="14"></i> OUTPUT</div>
+    <div class="lesson-panel-body">
+      <div id="output-log"><span class="line text-secondary">Console output will appear here.</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="ai-tutor" id="ai-tutor" style="height:220px;">
+  <div class="ai-tutor-head">
+    <i data-lucide="lightbulb" width="18"></i> Explanation
+  </div>
+  <div class="ai-quick">
+    <button data-q="Explain this code">Explain this code</button>
+    <button data-q="Why is this wrong?">Why is this wrong?</button>
+    <button data-q="Give me a challenge">Create challenge</button>
+  </div>
+  <div class="ai-tutor-body" id="ai-tutor-body">
+    <div class="ai-msg bot">Hi! Edit the code and hit Run — I'll explain what happens based on the output.</div>
+  </div>
+  <div class="ai-tutor-input">
+    <input type="text" placeholder="Ask a question…" id="ai-input">
+    <button class="btn-rc btn-rc-primary" style="padding:10px 18px; background:linear-gradient(135deg, var(--warning), var(--primary));" id="ai-send"><i data-lucide="send" width="16"></i></button>
+  </div>
+</div>
+</div>
+</div>
+
+<iframe id="sandbox-frame" sandbox="allow-scripts" style="display:none;"></iframe>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs/loader.js"></script>
+<script>
+const STARTER_CODE = {{ starter_code_json|safe }};
+const HINTS = {{ hints_json|safe }};
+const interpretOutput = {{ interpret_js|safe }};
+
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' } });
+let editor;
+require(['vs/editor/editor.main'], function () {
+  editor = monaco.editor.create(document.getElementById('monaco-container'), {
+    value: STARTER_CODE,
+    language: 'javascript',
+    theme: 'vs-dark',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    minimap: { enabled: true },
+    automaticLayout: true,
+    padding: { top: 16 },
+  });
+});
+
+const frame = document.getElementById('sandbox-frame');
+window.addEventListener('message', (e) => {
+  if (e.data?.source !== 'rc-sandbox') return;
+  renderOutput(e.data.logs, e.data.error);
+});
+
+function runCode() {
+  const code = editor.getValue();
+  const doc = `
+    <script>
+      const logs = [];
+      const send = (error) => parent.postMessage({ source: 'rc-sandbox', logs, error }, '*');
+      console.log = (...args) => logs.push(args.map(String).join(' '));
+      try {
+        ${code}
+        send(null);
+      } catch (err) {
+        send(err.message);
+      }
+    <\/script>`;
+  frame.srcdoc = doc;
+}
+
+function renderOutput(logs, error) {
+  const out = document.getElementById('output-log');
+  out.innerHTML = '';
+  logs.forEach((l) => {
+    const div = document.createElement('div');
+    div.className = 'line ok';
+    div.textContent = '> ' + l;
+    out.appendChild(div);
+  });
+  if (error) {
+    const div = document.createElement('div');
+    div.className = 'line err';
+    div.textContent = '✕ ' + error;
+    out.appendChild(div);
+  }
+
+  const badge = document.getElementById('sim-badge');
+  const icon = document.getElementById('sim-badge-icon');
+  const status = document.getElementById('sim-status');
+  const detail = document.getElementById('sim-detail');
+
+  if (error) {
+    badge.className = 'sim-badge bad';
+    icon.setAttribute('data-lucide', 'x-circle');
+    status.textContent = 'Error';
+    status.style.color = 'var(--danger)';
+    detail.textContent = error;
+    lucide.createIcons();
+    return;
+  }
+
+  const result = interpretOutput(logs);
+  badge.className = 'sim-badge ' + result.status;
+  icon.setAttribute('data-lucide', result.status === 'good' ? 'check-circle-2' : result.status === 'bad' ? 'x-circle' : 'help-circle');
+  status.textContent = result.label;
+  status.style.color = result.status === 'good' ? 'var(--success)' : result.status === 'bad' ? 'var(--danger)' : 'var(--text)';
+  detail.textContent = result.detail || '';
+  lucide.createIcons();
+
+  if (result.status !== 'neutral' || logs.length) aiSay(HINTS.explain);
+}
+
+document.getElementById('run-btn').addEventListener('click', runCode);
+
+document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+  document.getElementById('lesson-shell').classList.toggle('fullscreen');
+  setTimeout(() => editor?.layout(), 50);
+});
+
+function pulseEditorLayout(durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    editor?.layout();
+    if (now - start < durationMs) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('workspace-expand-toggle').addEventListener('click', (e) => {
+  const area = document.getElementById('lesson-content-area');
+  const expanded = area.classList.toggle('workspace-expanded');
+  e.currentTarget.innerHTML = expanded ? '<i data-lucide="arrow-down-to-line" width="18"></i>' : '<i data-lucide="arrow-up-to-line" width="18"></i>';
+  e.currentTarget.title = expanded ? 'Collapse workspace' : 'Expand workspace';
+  lucide.createIcons();
+  pulseEditorLayout(260);
+});
+
+
+function aiSay(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function aiAsk(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => aiSay(canned(text)), 400);
+}
+function canned(q) {
+  if (/explain/i.test(q)) return HINTS.explain;
+  if (/wrong|error/i.test(q)) return HINTS.wrong;
+  if (/challenge/i.test(q)) return HINTS.challenge;
+  return "Good question — try running the code and I'll explain what happens based on the output.";
+}
+document.querySelectorAll('.ai-quick button').forEach((b) => b.addEventListener('click', () => aiAsk(b.dataset.q)));
+document.getElementById('ai-send').addEventListener('click', () => {
+  const input = document.getElementById('ai-input');
+  if (!input.value.trim()) return;
+  aiAsk(input.value.trim());
+  input.value = '';
+});
+document.getElementById('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('ai-send').click();
+});
+</script>
+{% endblock %}

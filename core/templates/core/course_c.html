@@ -1,0 +1,91 @@
+{% extends "core/base.html" %}
+{% block title %}Learn C — RealCode Academy{% endblock %}
+{% block content %}
+
+<section style="background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--bg)), var(--bg)); padding:64px 0 48px; border-bottom:1px solid var(--border);">
+  <div class="container-max">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-7">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="badge-rc badge-accent"><i data-lucide="cpu" width="14"></i> Beginner</span>
+          <span class="badge-rc badge-primary"><i data-lucide="clock" width="14"></i> ~1h total</span>
+        </div>
+        <h1 style="font-size:44px;">Learn C</h1>
+        <p class="hero-subtitle mb-4">Embedded Systems Simulator — write real C, run it against virtual hardware, and
+          watch a sensor reading travel through your code to flip an LED, buzzer, or motor.</p>
+
+        <div class="d-flex flex-wrap gap-4 mb-4 text-secondary" style="font-size:14px;">
+          <span><i data-lucide="book-open" width="16"></i> {{ lessons|length }} lessons</span>
+          <span><i data-lucide="users" width="16"></i> 8,120 students</span>
+          <span><i data-lucide="star" width="16" style="color:var(--warning);"></i> 4.8 rating</span>
+        </div>
+
+        <a href="{% url 'lesson_c' lessons.0.slug %}" class="btn-rc btn-rc-primary" style="background:linear-gradient(135deg, var(--accent), var(--primary));">
+          Start Learning <i data-lucide="arrow-right" width="18"></i>
+        </a>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card-rc" style="background:#1e1e1e; border:none; box-shadow:var(--shadow-lift);">
+          <pre class="font-mono mb-0" style="color:#d4d4d4; font-size:12.5px; line-height:1.7;"><code><span style="color:#569cd6;">int</span> <span style="color:#dcdcaa;">main</span>() {
+    <span style="color:#569cd6;">int</span> distance = read_distance_cm();
+
+    <span style="color:#c586c0;">if</span> (distance &lt; <span style="color:#b5cea8;">20</span>) {
+        led_on();
+        buzzer_on();
+        printf(<span style="color:#ce9178;">"WARNING: Obstacle at %d cm"</span>, distance);
+    } <span style="color:#c586c0;">else</span> {
+        led_off();
+        buzzer_off();
+    }
+    <span style="color:#c586c0;">return</span> <span style="color:#b5cea8;">0</span>;
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-max" style="padding:56px 0 100px;">
+  <div class="row g-5">
+    <div class="col-lg-8">
+      <h4 class="mb-4">Lessons</h4>
+      <div class="d-flex flex-column gap-3">
+        {% for l in lessons %}
+        <a href="{% url 'lesson_c' l.slug %}" class="card-rc hoverable" style="display:block;">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, var(--accent), var(--primary));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="play" width="18" style="color:#fff;"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div style="font-weight:600;">{{ l.title }}</div>
+              <div class="text-secondary" style="font-size:13px;">{{ l.desc }}</div>
+            </div>
+            <span class="text-secondary" style="font-size:13px;">{{ l.duration }}</span>
+            <i data-lucide="chevron-right" width="18" class="text-secondary"></i>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card-rc mb-4">
+        <h6 class="mb-3">Instructor</h6>
+        <div class="d-flex align-items-center gap-3">
+          <div class="rc-avatar" style="width:48px;height:48px;font-size:16px; background:linear-gradient(135deg, var(--accent), var(--primary));">R</div>
+          <div>
+            <div style="font-weight:600;">Rafael Costa</div>
+            <div class="text-secondary" style="font-size:13px;">Embedded Systems Engineer</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-rc">
+        <h6 class="mb-3">Your Progress</h6>
+        <div class="progress-rc mb-2"><div class="progress-rc-fill" data-progress-to="0"></div></div>
+        <div class="text-secondary" style="font-size:13px;">0 of {{ lessons|length }} lessons complete</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

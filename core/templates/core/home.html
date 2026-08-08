@@ -1,0 +1,122 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<section class="hero-rc" data-animate-section>
+  <div class="hero-bg-canvas">
+    <span class="floating-snippet" style="top:6%; left:3%; animation-delay:0s;">const x = 10;</span>
+    <span class="floating-snippet" style="top:8%; left:82%; animation-delay:1.2s;">if (age &gt;= 18)</span>
+    <span class="floating-snippet" style="top:47%; left:0.5%; animation-delay:2.4s;">SELECT * FROM users;</span>
+    <span class="floating-snippet" style="top:90%; left:6%; animation-delay:0.6s;">def predict(x):</span>
+    <span class="floating-snippet" style="top:92%; left:80%; animation-delay:1.8s;">async fn handler()</span>
+    <span class="floating-snippet" style="top:44%; left:95.5%; animation-delay:3.2s;">GET /api/users</span>
+    <span class="particle" style="width:12px; height:12px; top:16%; left:16%;"></span>
+    <span class="particle" style="width:8px; height:8px; top:22%; left:92%; animation-delay:2s;"></span>
+    <span class="particle" style="width:16px; height:16px; top:82%; left:20%; animation-delay:4s;"></span>
+    <span class="particle" style="width:10px; height:10px; top:65%; left:97%; animation-delay:1.4s;"></span>
+    <span class="particle" style="width:7px; height:7px; top:5%; left:45%; animation-delay:3.6s;"></span>
+  </div>
+
+  <div class="container-max position-relative hero-content-layer">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge-rc badge-primary mb-3"><i data-lucide="sparkles" width="14"></i> Interactive programming laboratory</span>
+        <h1 class="hero-headline">
+          Learn Programming<br>
+          <span class="hero-gradient-text">By Doing</span><br>
+          Instead of Watching
+        </h1>
+        <p class="hero-subtitle">
+          Build websites. Control robots. Read sensors. Create APIs. Train AI.
+          All inside your browser.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{% url 'dashboard' %}" class="btn-rc btn-rc-primary">
+            Start Learning <i data-lucide="arrow-right" width="18"></i>
+          </a>
+          <a href="{% url 'labs' %}" class="btn-rc btn-rc-ghost">
+            Explore Labs
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-6" x-data="{ distance: 35 }">
+        <div class="card-rc card-rc-glass">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge-rc badge-accent"><i data-lucide="radar" width="14"></i> Distance Sensor</span>
+            <span class="badge-rc" :class="distance < 20 ? 'badge-success' : 'badge-warning'">
+              <span x-text="distance < 20 ? 'LED ON' : 'LED OFF'"></span>
+            </span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-center gap-4 py-4">
+            <div class="text-center">
+              <div style="width:64px;height:64px;border-radius:16px;background:var(--bg);display:flex;align-items:center;justify-content:center;border:1px solid var(--border);">
+                <i data-lucide="radar" width="28" class="text-secondary"></i>
+              </div>
+              <div class="text-secondary mt-2" style="font-size:12px;">Sensor</div>
+            </div>
+            <i data-lucide="arrow-right" width="20" class="text-secondary"></i>
+            <div class="text-center">
+              <div style="width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;transition:all 300ms;"
+                   :style="distance < 20 ? 'background:radial-gradient(circle, #fef08a, var(--warning)); box-shadow:0 0 32px var(--warning);' : 'background:var(--bg); border:1px solid var(--border);'">
+                <i data-lucide="lightbulb" width="28" :class="distance < 20 ? 'text-white' : 'text-secondary'"></i>
+              </div>
+              <div class="text-secondary mt-2" style="font-size:12px;">LED</div>
+            </div>
+          </div>
+
+          <label class="text-secondary d-block mb-2" style="font-size:13px;">
+            Move to <strong x-text="distance"></strong> cm
+          </label>
+          <input type="range" min="0" max="60" x-model="distance" class="form-range mb-3">
+
+          <pre class="font-mono p-3 mb-0" style="background:var(--bg); border-radius:var(--radius-sm); font-size:13px; border:1px solid var(--border);"><code><span class="text-secondary">// distance.c</span>
+<span :style="distance < 20 ? 'background:color-mix(in srgb, var(--warning) 25%, transparent); border-radius:4px;' : ''">if (distance &lt; 20) {</span>
+    led_on();
+} else {
+    led_off();
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-max" style="margin-top:60px;" data-animate-section>
+  <div class="text-center mx-auto mb-5" style="max-width:640px;">
+    <h2 style="font-size:36px;">Every language. One playground.</h2>
+    <p class="text-secondary">Real simulations for real understanding — not slides, not videos.</p>
+  </div>
+
+  <div class="feature-grid">
+    {% for f in features %}
+    <div class="card-rc hoverable">
+      <div class="feature-icon">
+        <i data-lucide="{{ f.icon }}" width="24"></i>
+      </div>
+      <h5 class="mb-1">Learn {{ f.lang }}</h5>
+      <p class="text-secondary mb-0">{{ f.title }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container-max" style="margin-top:100px;" data-animate-section>
+  <div class="card-rc card-rc-glass" style="background:linear-gradient(135deg, var(--primary), var(--accent)); border:none;">
+    <div class="row align-items-center g-4 text-white py-3">
+      <div class="col-lg-8">
+        <h2 class="text-white mb-2">Ready to start building?</h2>
+        <p class="mb-0" style="opacity:.9;">Join thousands learning to code by experimenting, not memorizing.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="{% url 'dashboard' %}" class="btn-rc" style="background:#fff; color:var(--primary);">
+          Get Started Free <i data-lucide="arrow-right" width="18"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

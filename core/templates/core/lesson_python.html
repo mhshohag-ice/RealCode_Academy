@@ -1,0 +1,567 @@
+{% extends "core/base.html" %}
+{% block title %}{{ lesson.title }} — Learn Python — RealCode Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { overflow-x: hidden; background: var(--bg); }
+  footer { margin-top: 0 !important; }
+  .lesson-topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--card); flex-shrink: 0;
+  }
+  .lesson-crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .lesson-shell { display: flex; flex-direction: column; height: calc(100vh - 73px); }
+  .lesson-shell.fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; background: var(--bg); }
+  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+  .lesson-shell.fullscreen .lesson-content-area { padding: 0; gap: 0; }
+  .lesson-shell.fullscreen .lesson-workspace, .lesson-shell.fullscreen .ai-tutor { border-radius: 0; box-shadow: none; }
+
+  .lesson-workspace {
+    display: flex; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: var(--shadow-soft); background: var(--card);
+  }
+  .lesson-panel { display: flex; flex-direction: column; min-width: 0; }
+  .lesson-panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 13px 18px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .lesson-panel-body { flex: 1; overflow: auto; padding: 16px; }
+  #panel-vars { flex: 0 0 20%; border-right: 1px solid var(--border); }
+  #panel-editor { flex: 1 1 60%; }
+  #panel-output { flex: 0 0 20%; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+
+  #monaco-container { flex: 1; background: #1e1e1e; }
+  .playback-bar {
+    display: flex; align-items: center; gap: 8px; padding: 6px 16px; border-top: 1px solid var(--border);
+    flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .pb-btn {
+    width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--card);
+    color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  .pb-btn:hover:not(:disabled) { border-color: var(--success); color: var(--success); transform: translateY(-1px); box-shadow: 0 3px 8px color-mix(in srgb, var(--success) 20%, transparent); }
+  .pb-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .pb-label { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+
+  .lesson-panel-body::-webkit-scrollbar, .ai-tutor-body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .lesson-panel-body::-webkit-scrollbar-track, .ai-tutor-body::-webkit-scrollbar-track { background: transparent; }
+  .lesson-panel-body::-webkit-scrollbar-thumb, .ai-tutor-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  .lesson-panel-body::-webkit-scrollbar-thumb:hover, .ai-tutor-body::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  .var-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+    background: var(--card); animation: varPop 300ms ease; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  @keyframes varPop { from { transform: scale(.94); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+  .var-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .var-name { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+  .type-badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .type-int, .type-float { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+  .type-str { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+  .type-bool { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+  .type-list, .type-dict { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+  .type-object, .type-NoneType { background: var(--border); color: var(--text-secondary); }
+  .var-value { font-family: var(--font-mono); font-size: 13px; }
+  .mem-cells { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mem-cell {
+    min-width: 34px; padding: 4px 8px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 12px; text-align: center; position: relative;
+  }
+  .mem-cell .idx { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--text-secondary); }
+  .scope-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); margin: 14px 0 8px; }
+  .scope-label:first-child { margin-top: 0; }
+
+  .fn-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; transition: border-color var(--transition), box-shadow var(--transition); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  .fn-card.active-call { border-color: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent); }
+  .fn-card-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-family: var(--font-mono); font-size: 12.5px; }
+  .fn-card-body { padding: 0 12px 12px; font-size: 12px; display: none; }
+  .fn-card.open .fn-card-body { display: block; }
+  .fn-card.active-call .fn-card-head { background: color-mix(in srgb, var(--success) 10%, transparent); }
+
+  #output-log { font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
+  #output-log .ok { color: var(--success); }
+  #output-log .err { color: var(--danger); }
+
+  .ai-tutor {
+    height: 220px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
+    background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: height 200ms ease;
+  }
+  .lesson-content-area.workspace-expanded .ai-tutor { height: 56px; }
+  .lesson-content-area.workspace-expanded .ai-tutor-body,
+  .lesson-content-area.workspace-expanded .ai-tutor-input { display: none; }
+  .ai-tutor-head {
+    padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 14px; flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .ai-tutor-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .ai-msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14.5px; line-height: 1.55; }
+  .ai-msg.bot { background: var(--bg); border: 1px solid var(--border); align-self: flex-start; }
+  .ai-msg.user { background: linear-gradient(135deg, var(--success), var(--accent)); color: #fff; align-self: flex-end; }
+  .ai-tutor-input { display: flex; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .ai-tutor-input input { flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px; background: var(--bg); color: var(--text); }
+
+  .rc-line-highlight { background: color-mix(in srgb, var(--success) 22%, transparent); }
+  .rc-line-highlight-glyph { background: var(--success); width: 4px !important; margin-left: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lesson-shell" id="lesson-shell">
+<div class="lesson-topbar">
+  <div class="lesson-crumb">
+    <a href="{% url 'course_python' %}" class="text-secondary">Learn Python</a>
+    <i data-lucide="chevron-right" width="14"></i>
+    <span style="color:var(--text);">{{ lesson.title }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge-rc badge-success" id="runtime-badge"><i data-lucide="loader" width="14"></i> Booting Python runtime…</span>
+    <button class="rc-icon-btn" id="workspace-expand-toggle" title="Expand workspace"><i data-lucide="arrow-up-to-line" width="18"></i></button>
+    <button class="rc-icon-btn" id="fullscreen-toggle" title="Fullscreen"><i data-lucide="maximize-2" width="18"></i></button>
+  </div>
+</div>
+
+<div class="lesson-content-area" id="lesson-content-area">
+<div class="lesson-workspace" id="lesson-workspace">
+
+  <div class="lesson-panel" id="panel-vars">
+    <div class="lesson-panel-head"><i data-lucide="layers" width="14"></i> VARIABLES &amp; MEMORY</div>
+    <div class="lesson-panel-body" id="vars-body">
+      <p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution to watch variables appear here.</p>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-editor">
+    <div class="lesson-panel-head">
+      <i data-lucide="code-2" width="14"></i> CODE
+      <span class="flex-grow-1"></span>
+      <button class="btn-rc btn-rc-primary" style="padding:6px 16px; font-size:13px; background:linear-gradient(135deg, var(--success), var(--accent));" id="run-btn" disabled>
+        <i data-lucide="play" width="14"></i> Run
+      </button>
+    </div>
+    <div id="monaco-container"></div>
+    <div class="playback-bar">
+      <button class="pb-btn" id="pb-reset" title="Reset" disabled><i data-lucide="rotate-ccw" width="15"></i></button>
+      <button class="pb-btn" id="pb-prev" title="Previous step" disabled><i data-lucide="skip-back" width="15"></i></button>
+      <button class="pb-btn" id="pb-play" title="Play" disabled><i data-lucide="play" width="15"></i></button>
+      <button class="pb-btn" id="pb-next" title="Next step" disabled><i data-lucide="skip-forward" width="15"></i></button>
+      <span class="pb-label" id="pb-label">no trace yet</span>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-output">
+    <div class="lesson-panel-head"><i data-lucide="terminal" width="14"></i> OUTPUT</div>
+    <div class="lesson-panel-body" style="flex:0 0 40%; border-bottom:1px solid var(--border);">
+      <div id="output-log"><span class="text-secondary">Console output will appear here.</span></div>
+    </div>
+    <div class="lesson-panel-head" style="border-top:1px solid var(--border);"><i data-lucide="box" width="14"></i> FUNCTIONS</div>
+    <div class="lesson-panel-body" id="fn-body">
+      <p class="text-secondary" style="font-size:13px;">Functions defined in your code will appear here.</p>
+    </div>
+  </div>
+</div>
+
+<div class="ai-tutor" id="ai-tutor" style="height:220px;">
+  <div class="ai-tutor-head">
+    <i data-lucide="lightbulb" width="18"></i> Explanation
+  </div>
+  <div class="ai-tutor-body" id="ai-tutor-body">
+    <div class="ai-msg bot">Hi! Click <strong>Run</strong> to execute this Python, then use the step controls to walk through it one line at a time — I'll narrate what's happening.</div>
+  </div>
+  <div class="ai-tutor-input">
+    <input type="text" placeholder="Ask a question…" id="ai-input">
+    <button class="btn-rc btn-rc-primary" style="padding:10px 18px; background:linear-gradient(135deg, var(--success), var(--accent));" id="ai-send"><i data-lucide="send" width="16"></i></button>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script>
+const STARTER_CODE = {{ starter_code_json|safe }};
+const HINTS = {{ hints_json|safe }};
+
+/* ---------- Monaco ---------- */
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' } });
+let editor, lineDecorations = [];
+require(['vs/editor/editor.main'], function () {
+  editor = monaco.editor.create(document.getElementById('monaco-container'), {
+    value: STARTER_CODE,
+    language: 'python',
+    theme: 'vs-dark',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    minimap: { enabled: true },
+    automaticLayout: true,
+    padding: { top: 16 },
+  });
+});
+
+/* ---------- Pyodide boot ---------- */
+let pyodide = null;
+(async function boot() {
+  pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/' });
+  document.getElementById('runtime-badge').innerHTML = '<i data-lucide="check-circle-2" width="14"></i> Python ready';
+  document.getElementById('run-btn').disabled = false;
+  lucide.createIcons();
+})();
+
+const TRACER_SCRIPT = `
+import sys, json
+
+def _capture_locals(frame):
+    out = {}
+    for k, v in frame.f_locals.items():
+        if k.startswith('__'):
+            continue
+        try:
+            out[k] = repr(v)
+        except Exception:
+            out[k] = '<unrepr>'
+    return out
+
+_trace_steps = []
+_depth = 0
+
+def _tracer(frame, event, arg):
+    global _depth
+    if frame.f_code.co_filename != '<lesson>':
+        return _tracer
+    if event == 'call':
+        _depth += 1
+    if event in ('line', 'call', 'return'):
+        _trace_steps.append({
+            'event': event,
+            'line': frame.f_lineno,
+            'func': frame.f_code.co_name,
+            'depth': _depth,
+            'locals': _capture_locals(frame),
+        })
+    if event == 'return':
+        _depth -= 1
+    return _tracer
+
+class _Capture:
+    def __init__(self):
+        self.buf = []
+    def write(self, s):
+        if s:
+            self.buf.append(s)
+    def flush(self):
+        pass
+
+_cap = _Capture()
+_old_stdout = sys.stdout
+sys.stdout = _cap
+_error = None
+sys.settrace(_tracer)
+try:
+    exec(compile(USER_CODE, '<lesson>', 'exec'), {})
+except Exception as e:
+    _error = f"{type(e).__name__}: {e}"
+finally:
+    sys.settrace(None)
+    sys.stdout = _old_stdout
+
+json.dumps({'steps': _trace_steps, 'stdout': ''.join(_cap.buf), 'error': _error})
+`;
+
+/* ---------- Playback state ---------- */
+let steps = [];
+let stepIndex = -1;
+let playTimer = null;
+
+function guessType(v) {
+  if (/^-?\d+$/.test(v)) return 'int';
+  if (/^-?\d+\.\d+$/.test(v)) return 'float';
+  if (v === 'True' || v === 'False') return 'bool';
+  if (v === 'None') return 'NoneType';
+  if (v.startsWith("'") || v.startsWith('"')) return 'str';
+  if (v.startsWith('[')) return 'list';
+  if (v.startsWith('{')) return 'dict';
+  return 'object';
+}
+function listItems(v) {
+  const inner = v.slice(1, -1).trim();
+  if (!inner) return [];
+  return inner.split(',').map((s) => s.trim());
+}
+
+function renderVarGroup(container, title, locals) {
+  const keys = Object.keys(locals);
+  if (!keys.length) return;
+  const label = document.createElement('div');
+  label.className = 'scope-label';
+  label.textContent = title;
+  container.appendChild(label);
+  keys.forEach((name) => {
+    const val = locals[name];
+    const type = guessType(val);
+    const card = document.createElement('div');
+    card.className = 'var-card';
+    card.innerHTML = `
+      <div class="var-card-head">
+        <span class="var-name">${name}</span>
+        <span class="type-badge type-${type}">${type}</span>
+      </div>`;
+    if (type === 'list') {
+      const cells = document.createElement('div');
+      cells.className = 'mem-cells';
+      listItems(val).forEach((item, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'mem-cell';
+        cell.innerHTML = `<span class="idx">${i}</span>${item}`;
+        cells.appendChild(cell);
+      });
+      card.appendChild(cells);
+    } else {
+      const value = document.createElement('div');
+      value.className = 'var-value';
+      value.textContent = val;
+      card.appendChild(value);
+    }
+    container.appendChild(card);
+  });
+}
+
+function computeStackAt(i) {
+  const stack = [{ func: '<module>', locals: {}, line: null }];
+  for (let s = 0; s <= i; s++) {
+    const step = steps[s];
+    if (step.event === 'call') {
+      if (step.func === '<module>') {
+        stack[0].locals = step.locals;
+      } else {
+        stack.push({ func: step.func, locals: step.locals, line: step.line });
+      }
+    } else if (step.event === 'line') {
+      stack[stack.length - 1].locals = step.locals;
+      stack[stack.length - 1].line = step.line;
+    } else if (step.event === 'return') {
+      if (stack.length > 1) stack.pop();
+    }
+  }
+  return stack;
+}
+
+function renderFunctions(stack) {
+  const body = document.getElementById('fn-body');
+  const code = editor.getValue();
+  const defs = [...code.matchAll(/def\s+(\w+)\s*\(([^)]*)\)/g)];
+  body.innerHTML = '';
+  if (!defs.length) {
+    body.innerHTML = '<p class="text-secondary" style="font-size:13px;">No functions defined.</p>';
+    return;
+  }
+  const activeFrame = stack.length > 1 ? stack[stack.length - 1] : null;
+  defs.forEach(([, name, params]) => {
+    const isActive = activeFrame && activeFrame.func === name;
+    const card = document.createElement('div');
+    card.className = 'fn-card' + (isActive ? ' active-call open' : '');
+    card.innerHTML = `
+      <div class="fn-card-head">
+        <i data-lucide="chevron-right" width="13" class="fn-caret"></i>
+        <span>def <strong>${name}</strong>(${params})</span>
+        ${isActive ? '<span class="badge-rc badge-success" style="margin-left:auto; font-size:10px;">active call</span>' : ''}
+      </div>
+      <div class="fn-card-body"></div>`;
+    const bodyEl = card.querySelector('.fn-card-body');
+    if (isActive) {
+      const keys = Object.keys(activeFrame.locals);
+      if (keys.length) {
+        bodyEl.innerHTML = keys.map((k) => `<div><span style="color:var(--success); font-family:var(--font-mono);">${k}</span> = <span class="font-mono">${activeFrame.locals[k]}</span></div>`).join('');
+      } else {
+        bodyEl.innerHTML = '<span class="text-secondary">no locals yet</span>';
+      }
+    } else {
+      bodyEl.innerHTML = '<span class="text-secondary">not currently executing</span>';
+    }
+    card.querySelector('.fn-card-head').addEventListener('click', () => card.classList.toggle('open'));
+    body.appendChild(card);
+  });
+  lucide.createIcons();
+}
+
+function aiSay(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function narrateStep(step, stack) {
+  const lineText = editor.getModel().getLineContent(step.line).trim();
+  if (step.event === 'call' && step.func !== '<module>') {
+    aiSay(`Entering ${step.func}() — a new local scope is created.`);
+  } else if (step.event === 'return' && step.func !== '<module>') {
+    aiSay(`${step.func}() returns. Its local scope is destroyed — those variables are gone from memory.`);
+  } else if (/^for\s/.test(lineText)) {
+    aiSay(`Loop check: "${lineText}" — the loop continues while there are items left.`);
+  } else if (lineText.includes('+=')) {
+    const top = stack[stack.length - 1];
+    aiSay(`Line ${step.line}: "${lineText}" — accumulating into a running total.`);
+  }
+}
+
+function applyStep(i) {
+  stepIndex = Math.max(0, Math.min(i, steps.length - 1));
+  const step = steps[stepIndex];
+  const stack = computeStackAt(stepIndex);
+
+  lineDecorations = editor.deltaDecorations(lineDecorations, [{
+    range: new monaco.Range(step.line, 1, step.line, 1),
+    options: { isWholeLine: true, className: 'rc-line-highlight', glyphMarginClassName: 'rc-line-highlight-glyph' },
+  }]);
+  editor.revealLineInCenter(step.line);
+
+  const varsBody = document.getElementById('vars-body');
+  varsBody.innerHTML = '';
+  renderVarGroup(varsBody, 'Global scope', stack[0].locals);
+  if (stack.length > 1) renderVarGroup(varsBody, `Local scope — ${stack[stack.length - 1].func}()`, stack[stack.length - 1].locals);
+  if (!Object.keys(stack[0].locals).length && stack.length === 1) {
+    varsBody.innerHTML = '<p class="text-secondary" style="font-size:13px;">No variables assigned yet.</p>';
+  }
+
+  renderFunctions(stack);
+  narrateStep(step, stack);
+
+  document.getElementById('pb-label').textContent = `step ${stepIndex + 1} / ${steps.length} · line ${step.line}`;
+  document.getElementById('pb-prev').disabled = stepIndex === 0;
+  document.getElementById('pb-next').disabled = stepIndex === steps.length - 1;
+}
+
+function stopPlaying() {
+  clearInterval(playTimer);
+  playTimer = null;
+  document.getElementById('pb-play').innerHTML = '<i data-lucide="play" width="15"></i>';
+  lucide.createIcons();
+}
+
+function resetPlayback() {
+  stopPlaying();
+  steps = [];
+  stepIndex = -1;
+  lineDecorations = editor.deltaDecorations(lineDecorations, []);
+  document.getElementById('vars-body').innerHTML = '<p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution to watch variables appear here.</p>';
+  document.getElementById('fn-body').innerHTML = '<p class="text-secondary" style="font-size:13px;">Functions defined in your code will appear here.</p>';
+  document.getElementById('pb-label').textContent = 'no trace yet';
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = true));
+}
+
+async function runCode() {
+  const runBtn = document.getElementById('run-btn');
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<i data-lucide="loader" width="14"></i> Running…';
+  lucide.createIcons();
+
+  pyodide.globals.set('USER_CODE', editor.getValue());
+  let resultJson;
+  try {
+    resultJson = await pyodide.runPythonAsync(TRACER_SCRIPT);
+  } catch (err) {
+    resultJson = JSON.stringify({ steps: [], stdout: '', error: String(err) });
+  }
+  const result = JSON.parse(resultJson);
+
+  const out = document.getElementById('output-log');
+  out.innerHTML = '';
+  if (result.stdout) {
+    result.stdout.split('\n').filter(Boolean).forEach((line) => {
+      const div = document.createElement('div');
+      div.className = 'ok';
+      div.textContent = '> ' + line;
+      out.appendChild(div);
+    });
+  }
+  if (result.error) {
+    const div = document.createElement('div');
+    div.className = 'err';
+    div.textContent = '✕ ' + result.error;
+    out.appendChild(div);
+  }
+  if (!result.stdout && !result.error) {
+    out.innerHTML = '<span class="text-secondary">(no output)</span>';
+  }
+
+  steps = result.steps.filter((s) => !(s.event === 'call' && s.func === '<module>'));
+  stepIndex = -1;
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = steps.length === 0));
+  if (steps.length) {
+    applyStep(0);
+    aiSay(`Run complete — ${steps.length} execution steps captured. Use the step controls to walk through them.`);
+  }
+
+  runBtn.disabled = false;
+  runBtn.innerHTML = '<i data-lucide="play" width="14"></i> Run';
+  lucide.createIcons();
+}
+
+document.getElementById('run-btn').addEventListener('click', runCode);
+document.getElementById('pb-reset').addEventListener('click', resetPlayback);
+document.getElementById('pb-prev').addEventListener('click', () => applyStep(stepIndex - 1));
+document.getElementById('pb-next').addEventListener('click', () => applyStep(stepIndex + 1));
+document.getElementById('pb-play').addEventListener('click', (e) => {
+  if (playTimer) { stopPlaying(); return; }
+  e.currentTarget.innerHTML = '<i data-lucide="pause" width="15"></i>';
+  lucide.createIcons();
+  playTimer = setInterval(() => {
+    if (stepIndex >= steps.length - 1) { stopPlaying(); return; }
+    applyStep(stepIndex + 1);
+  }, 700);
+});
+
+document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+  document.getElementById('lesson-shell').classList.toggle('fullscreen');
+  setTimeout(() => editor?.layout(), 50);
+});
+
+function pulseEditorLayout(durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    editor?.layout();
+    if (now - start < durationMs) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('workspace-expand-toggle').addEventListener('click', (e) => {
+  const area = document.getElementById('lesson-content-area');
+  const expanded = area.classList.toggle('workspace-expanded');
+  e.currentTarget.innerHTML = expanded ? '<i data-lucide="arrow-down-to-line" width="18"></i>' : '<i data-lucide="arrow-up-to-line" width="18"></i>';
+  e.currentTarget.title = expanded ? 'Collapse workspace' : 'Expand workspace';
+  lucide.createIcons();
+  pulseEditorLayout(260);
+});
+
+function aiAsk(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => aiSay(canned(text)), 400);
+}
+function canned(q) {
+  if (/explain/i.test(q)) return HINTS.explain;
+  if (/wrong|error/i.test(q)) return HINTS.wrong;
+  if (/challenge/i.test(q)) return HINTS.challenge;
+  return "Try running the code and stepping through it — I'll narrate what each line does.";
+}
+document.getElementById('ai-send').addEventListener('click', () => {
+  const input = document.getElementById('ai-input');
+  if (!input.value.trim()) return;
+  aiAsk(input.value.trim());
+  input.value = '';
+});
+document.getElementById('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('ai-send').click();
+});
+</script>
+{% endblock %}

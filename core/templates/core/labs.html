@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block title %}Labs — RealCode Academy{% endblock %}
+{% block content %}
+<section class="container-max" style="padding:64px 0;">
+  <h1 style="font-size:40px;">Labs</h1>
+  <p class="text-secondary mb-5" style="max-width:560px;">Jump straight into an interactive simulation. Change code, watch it happen.</p>
+
+  <div class="feature-grid">
+    {% for f in features %}
+    {% if f.course_url %}<a href="{{ f.course_url }}" class="card-rc hoverable">{% else %}<div class="card-rc hoverable">{% endif %}
+      <div class="feature-icon"><i data-lucide="{{ f.icon }}" width="24"></i></div>
+      <h5 class="mb-1">{{ f.lang }} Lab</h5>
+      <p class="text-secondary mb-0">{{ f.title }}</p>
+    {% if f.course_url %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

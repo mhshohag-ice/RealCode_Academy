@@ -1,0 +1,527 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}{{ lesson.title }} — Learn Arduino — RealCode Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { overflow-x: hidden; background: var(--bg); }
+  footer { margin-top: 0 !important; }
+  .lesson-topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--card); flex-shrink: 0;
+  }
+  .lesson-crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .lesson-shell { display: flex; flex-direction: column; height: calc(100vh - 73px); }
+  .lesson-shell.fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; background: var(--bg); }
+  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+  .lesson-shell.fullscreen .lesson-content-area { padding: 0; gap: 0; }
+  .lesson-shell.fullscreen .lesson-workspace, .lesson-shell.fullscreen .ai-tutor { border-radius: 0; box-shadow: none; }
+
+  .lesson-workspace {
+    display: flex; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: var(--shadow-soft); background: var(--card);
+  }
+  .lesson-panel { display: flex; flex-direction: column; min-width: 0; }
+  .lesson-panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 13px 18px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .lesson-panel-body { flex: 1; overflow: auto; padding: 16px; }
+  #panel-board { flex: 0 0 20%; border-right: 1px solid var(--border); }
+  #panel-editor { flex: 1 1 60%; }
+  #panel-output { flex: 0 0 20%; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+
+  #monaco-container { flex: 1; background: #1e1e1e; }
+  .playback-bar { display: flex; align-items: center; gap: 8px; padding: 6px 16px; border-top: 1px solid var(--border); flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card)); }
+  .pb-btn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--card); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  .pb-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 8px color-mix(in srgb, var(--primary) 20%, transparent); }
+  .pb-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .pb-label { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+
+  .lesson-panel-body::-webkit-scrollbar, .ai-tutor-body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .lesson-panel-body::-webkit-scrollbar-track, .ai-tutor-body::-webkit-scrollbar-track { background: transparent; }
+  .lesson-panel-body::-webkit-scrollbar-thumb, .ai-tutor-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  .lesson-panel-body::-webkit-scrollbar-thumb:hover, .ai-tutor-body::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  /* ---- Virtual Arduino board ---- */
+  .sensor-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+  .sensor-inputs label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+  .sensor-inputs .row-inline { display: flex; align-items: center; gap: 8px; }
+  .sensor-inputs input { width: 80px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-family: var(--font-mono); }
+
+  .board {
+    background: linear-gradient(135deg, #0b3b24, #0f172a);
+    border-radius: 16px; padding: 18px 14px; border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  }
+  .board-label { color: #86efac; font-family: var(--font-mono); font-size: 11px; margin-bottom: 10px; letter-spacing: .05em; }
+  .pin-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .pin {
+    width: 26px; height: 26px; border-radius: 50%; background: #1e293b; border: 1px solid #334155;
+    display: flex; align-items: center; justify-content: center; font-size: 8px; color: #94a3b8;
+    font-family: var(--font-mono); transition: all 200ms; flex-shrink: 0;
+  }
+  .pin.glow { background: radial-gradient(circle, #fef08a, var(--warning)); box-shadow: 0 0 14px var(--warning); color: #1e293b; border-color: var(--warning); }
+  .pin.reading { box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary) 45%, transparent); border-color: var(--secondary); }
+
+  .wiring { margin-top: 18px; }
+  .wire-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; background: var(--card); }
+  .wire-row .wire-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg); flex-shrink: 0; }
+  .wire-row.active .wire-icon { background: color-mix(in srgb, var(--warning) 22%, transparent); color: var(--warning); }
+  .wire-row .wire-name { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+  .wire-row .wire-pin { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
+
+  .scope-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); margin: 14px 0 8px; }
+  .scope-label:first-child { margin-top: 0; }
+  .var-card { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; background: var(--card); display: flex; justify-content: space-between; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  .var-name { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+  .var-value { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+  .call-stack-trail { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .call-stack-trail strong { color: var(--primary); }
+
+  #output-log { font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
+  #output-log .ok { color: var(--success); }
+  #output-log .err { color: var(--danger); }
+
+  .rc-line-glow { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+
+  .ai-tutor {
+    height: 220px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
+    background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: height 200ms ease;
+  }
+  .lesson-content-area.workspace-expanded .ai-tutor { height: 56px; }
+  .lesson-content-area.workspace-expanded .ai-tutor-body,
+  .lesson-content-area.workspace-expanded .ai-tutor-input { display: none; }
+  .ai-tutor-head {
+    padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 14px; flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .ai-tutor-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .ai-msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14.5px; line-height: 1.55; }
+  .ai-msg.bot { background: var(--bg); border: 1px solid var(--border); align-self: flex-start; }
+  .ai-msg.user { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; align-self: flex-end; }
+  .ai-tutor-input { display: flex; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .ai-tutor-input input { flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px; background: var(--bg); color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lesson-shell" id="lesson-shell">
+<div class="lesson-topbar">
+  <div class="lesson-crumb">
+    <a href="{% url 'course_arduino' %}" class="text-secondary">Learn Arduino</a>
+    <i data-lucide="chevron-right" width="14"></i>
+    <span style="color:var(--text);">{{ lesson.title }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <button class="rc-icon-btn" id="workspace-expand-toggle" title="Expand workspace"><i data-lucide="arrow-up-to-line" width="18"></i></button>
+    <button class="rc-icon-btn" id="fullscreen-toggle" title="Fullscreen"><i data-lucide="maximize-2" width="18"></i></button>
+  </div>
+</div>
+
+<div class="lesson-content-area" id="lesson-content-area">
+<div class="lesson-workspace" id="lesson-workspace">
+
+  <div class="lesson-panel" id="panel-board">
+    <div class="lesson-panel-head"><i data-lucide="circuit-board" width="14"></i> VIRTUAL ARDUINO BOARD</div>
+    <div class="lesson-panel-body">
+
+      <div class="sensor-inputs" id="sensor-inputs" style="display:none;">
+        <label id="sensor-label">Sensor readings per loop() cycle</label>
+        <div class="row-inline">
+          <input type="number" id="sensor-0" title="Loop 1 reading">
+          <input type="number" id="sensor-1" title="Loop 2 reading">
+          <input type="number" id="sensor-2" title="Loop 3 reading">
+          <span class="text-secondary" id="sensor-unit" style="font-size:12px;"></span>
+        </div>
+      </div>
+
+      <div class="board">
+        <div class="board-label">ARDUINO UNO — DIGITAL</div>
+        <div class="pin-row">
+          <div class="pin" data-pin="0">0</div>
+          <div class="pin" data-pin="1">1</div>
+          <div class="pin" data-pin="2">2</div>
+          <div class="pin" data-pin="3">3</div>
+          <div class="pin" data-pin="4">4</div>
+          <div class="pin" data-pin="5">5</div>
+          <div class="pin" data-pin="6">6</div>
+          <div class="pin" data-pin="7">7</div>
+          <div class="pin" data-pin="8">8</div>
+          <div class="pin" data-pin="9">9</div>
+          <div class="pin" data-pin="10">10</div>
+          <div class="pin" data-pin="11">11</div>
+          <div class="pin" data-pin="12">12</div>
+          <div class="pin" data-pin="13">13</div>
+        </div>
+        <div class="board-label" style="margin-top:10px;">ANALOG IN</div>
+        <div class="pin-row">
+          <div class="pin" data-pin="14">A0</div>
+          <div class="pin" data-pin="15">A1</div>
+          <div class="pin" data-pin="16">A2</div>
+          <div class="pin" data-pin="17">A3</div>
+          <div class="pin" data-pin="18">A4</div>
+          <div class="pin" data-pin="19">A5</div>
+        </div>
+      </div>
+
+      <div class="wiring" id="wiring-list"></div>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-editor">
+    <div class="lesson-panel-head">
+      <i data-lucide="code-2" width="14"></i> SKETCH
+      <span class="flex-grow-1"></span>
+      <button class="btn-rc btn-rc-primary" style="padding:6px 16px; font-size:13px;" id="run-btn">
+        <i data-lucide="play" width="14"></i> Run
+      </button>
+    </div>
+    <div id="monaco-container"></div>
+    <div class="playback-bar">
+      <button class="pb-btn" id="pb-reset" title="Reset" disabled><i data-lucide="rotate-ccw" width="15"></i></button>
+      <button class="pb-btn" id="pb-prev" title="Previous step" disabled><i data-lucide="skip-back" width="15"></i></button>
+      <button class="pb-btn" id="pb-play" title="Play" disabled><i data-lucide="play" width="15"></i></button>
+      <button class="pb-btn" id="pb-next" title="Next step" disabled><i data-lucide="skip-forward" width="15"></i></button>
+      <span class="pb-label" id="pb-label">no trace yet</span>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-output">
+    <div class="lesson-panel-head"><i data-lucide="terminal" width="14"></i> SERIAL MONITOR</div>
+    <div class="lesson-panel-body" style="flex:0 0 40%; border-bottom:1px solid var(--border);">
+      <div id="output-log"><span class="text-secondary">Serial output will appear here.</span></div>
+    </div>
+    <div class="lesson-panel-head" style="border-top:1px solid var(--border);"><i data-lucide="layers" width="14"></i> VARIABLES</div>
+    <div class="lesson-panel-body" id="vars-body">
+      <p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution.</p>
+    </div>
+  </div>
+</div>
+
+<div class="ai-tutor" id="ai-tutor" style="height:220px;">
+  <div class="ai-tutor-head">
+    <i data-lucide="lightbulb" width="18"></i> Explanation
+  </div>
+  <div class="ai-tutor-body" id="ai-tutor-body">
+    <div class="ai-msg bot">Hi! setup() runs once, then loop() repeats — I'll run it 3 times so you can watch it react over time. Set the sensor readings above, hit <strong>Run</strong>, then step through.</div>
+  </div>
+  <div class="ai-tutor-input">
+    <input type="text" placeholder="Ask a question…" id="ai-input">
+    <button class="btn-rc btn-rc-primary" style="padding:10px 18px;" id="ai-send"><i data-lucide="send" width="16"></i></button>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs/loader.js"></script>
+<script src="{% static 'js/c_interpreter.js' %}"></script>
+<script>
+const STARTER_CODE = {{ starter_code_json|safe }};
+const HINTS = {{ hints_json|safe }};
+const SENSOR = {{ sensor_json|safe }};
+
+/* ---------- Sensor sequence UI ---------- */
+function setupSensorUI() {
+  const block = document.getElementById('sensor-inputs');
+  if (!SENSOR) { block.style.display = 'none'; return; }
+  block.style.display = 'flex';
+  document.getElementById('sensor-label').textContent = `${SENSOR.label} per loop() cycle`;
+  document.getElementById('sensor-unit').textContent = SENSOR.unit;
+  SENSOR.sequence.forEach((v, i) => { document.getElementById('sensor-' + i).value = v; });
+}
+function sensorSequenceValues() {
+  if (!SENSOR) return [];
+  return [0, 1, 2].map((i) => parseFloat(document.getElementById('sensor-' + i).value) || 0);
+}
+setupSensorUI();
+
+/* ---------- Wiring diagram (derived from source) ---------- */
+const ICONS = {
+  led: 'lightbulb', buzzer: 'bell-ring', motor: 'fan',
+  light: 'radio', trig: 'radio', distance: 'radio', sensor: 'radio',
+};
+function guessIcon(name) {
+  const n = name.toLowerCase();
+  for (const key of Object.keys(ICONS)) if (n.includes(key)) return ICONS[key];
+  return 'circuit-board';
+}
+function pinLabel(pin) {
+  const p = parseInt(pin, 10);
+  return p >= 14 ? 'A' + (p - 14) : String(p);
+}
+function renderWiring(code) {
+  const list = document.getElementById('wiring-list');
+  list.innerHTML = '';
+  const entries = [];
+  const re = /int\s+(\w+)\s*=\s*(A[0-5]|\d+)\s*;/g;
+  let m;
+  while ((m = re.exec(code))) {
+    const raw = m[2];
+    const pin = raw.startsWith('A') ? 14 + parseInt(raw.slice(1), 10) : parseInt(raw, 10);
+    entries.push({ name: m[1], pin });
+  }
+  if (/LED_BUILTIN/.test(code)) entries.push({ name: 'LED_BUILTIN', pin: 13 });
+  entries.forEach((e) => {
+    const row = document.createElement('div');
+    row.className = 'wire-row';
+    row.dataset.pin = e.pin;
+    row.innerHTML = `
+      <div class="wire-icon"><i data-lucide="${guessIcon(e.name)}" width="16"></i></div>
+      <div class="wire-name">${e.name}</div>
+      <div class="wire-pin">Pin ${pinLabel(e.pin)}</div>`;
+    list.appendChild(row);
+  });
+  lucide.createIcons();
+}
+renderWiring(STARTER_CODE);
+
+/* ---------- Monaco ---------- */
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' } });
+let editor, lineDecorations = [];
+require(['vs/editor/editor.main'], function () {
+  editor = monaco.editor.create(document.getElementById('monaco-container'), {
+    value: STARTER_CODE,
+    language: 'cpp',
+    theme: 'vs-dark',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    minimap: { enabled: true },
+    automaticLayout: true,
+    padding: { top: 16 },
+  });
+  editor.onDidChangeModelContent(() => renderWiring(editor.getValue()));
+});
+
+/* ---------- Playback state ---------- */
+let steps = [];
+let stepIndex = -1;
+let playTimer = null;
+
+function computeStackAt(i) {
+  const stack = [];
+  for (let s = 0; s <= i; s++) {
+    const step = steps[s];
+    if (step.event === 'call') {
+      stack.push({ func: step.func, locals: step.locals, line: step.line });
+    } else if (step.event === 'line') {
+      if (stack.length) { stack[stack.length - 1].locals = step.locals; stack[stack.length - 1].line = step.line; }
+    } else if (step.event === 'return') {
+      if (stack.length) stack.pop();
+    }
+  }
+  return stack;
+}
+
+function computePinStateAt(i) {
+  const pins = {};
+  let lastRead = null;
+  for (let s = 0; s <= i; s++) {
+    const hw = steps[s].hw;
+    if (!hw) continue;
+    if (hw.type === 'pin_write') pins[hw.pin] = hw.value;
+    if (hw.type === 'pin_read' && s === i) lastRead = hw.pin;
+  }
+  return { pins, lastRead };
+}
+
+function renderBoard(i) {
+  const { pins, lastRead } = computePinStateAt(i);
+  document.querySelectorAll('.pin').forEach((el) => {
+    const pin = parseInt(el.dataset.pin, 10);
+    el.classList.toggle('glow', !!pins[pin]);
+    el.classList.toggle('reading', lastRead === pin);
+  });
+  document.querySelectorAll('.wire-row').forEach((el) => {
+    const pin = parseInt(el.dataset.pin, 10);
+    el.classList.toggle('active', !!pins[pin]);
+  });
+}
+
+function renderVars(stack) {
+  const body = document.getElementById('vars-body');
+  body.innerHTML = '';
+
+  if (!stack.length) {
+    body.innerHTML = '<p class="text-secondary" style="font-size:13px;">(between function calls)</p>';
+    return;
+  }
+
+  const trail = document.createElement('div');
+  trail.className = 'call-stack-trail';
+  trail.innerHTML = stack.map((f, idx) => (idx === stack.length - 1 ? `<strong>${f.func}()</strong>` : `${f.func}()`)).join(' &rarr; ');
+  body.appendChild(trail);
+
+  function renderGroup(title, locals) {
+    const keys = Object.keys(locals || {});
+    if (!keys.length) return;
+    const label = document.createElement('div');
+    label.className = 'scope-label';
+    label.textContent = title;
+    body.appendChild(label);
+    keys.forEach((name) => {
+      const card = document.createElement('div');
+      card.className = 'var-card';
+      card.innerHTML = `<span class="var-name">${name}</span><span class="var-value">${locals[name]}</span>`;
+      body.appendChild(card);
+    });
+  }
+  renderGroup(`${stack[stack.length - 1].func}() locals`, stack[stack.length - 1].locals);
+}
+
+function aiSay(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function narrateStep(step) {
+  if (step.event === 'call') aiSay(`Entering ${step.func}()${step.func === 'loop' ? ' — cycle running again' : ''}.`);
+  else if (step.event === 'return') aiSay(`${step.func}() finishes.`);
+  else if (step.hw && step.hw.type === 'pin_read') aiSay(`Reading pin ${pinLabel(step.hw.pin)}: ${step.hw.value}.`);
+  else if (step.hw && step.hw.type === 'pin_write') aiSay(`Pin ${pinLabel(step.hw.pin)} set ${step.hw.value ? 'HIGH' : 'LOW'}.`);
+}
+
+function applyStep(i) {
+  stepIndex = Math.max(0, Math.min(i, steps.length - 1));
+  const step = steps[stepIndex];
+  const stack = computeStackAt(stepIndex);
+
+  lineDecorations = editor.deltaDecorations(lineDecorations, [{
+    range: new monaco.Range(step.line, 1, step.line, 1),
+    options: { isWholeLine: true, className: 'rc-line-glow' },
+  }]);
+  editor.revealLineInCenter(step.line);
+
+  renderBoard(stepIndex);
+  renderVars(stack);
+  narrateStep(step);
+
+  const out = document.getElementById('output-log');
+  const lines = steps.slice(0, stepIndex + 1).filter((s) => s.output).map((s) => '> ' + s.output);
+  out.innerHTML = lines.length ? lines.map((l) => `<div class="ok">${l}</div>`).join('') : '<span class="text-secondary">(no output yet)</span>';
+
+  document.getElementById('pb-label').textContent = `step ${stepIndex + 1} / ${steps.length} · line ${step.line}`;
+  document.getElementById('pb-prev').disabled = stepIndex === 0;
+  document.getElementById('pb-next').disabled = stepIndex === steps.length - 1;
+}
+
+function stopPlaying() {
+  clearInterval(playTimer);
+  playTimer = null;
+  document.getElementById('pb-play').innerHTML = '<i data-lucide="play" width="15"></i>';
+  lucide.createIcons();
+}
+
+function resetPlayback() {
+  stopPlaying();
+  steps = [];
+  stepIndex = -1;
+  lineDecorations = editor.deltaDecorations(lineDecorations, []);
+  document.getElementById('vars-body').innerHTML = '<p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution.</p>';
+  document.getElementById('output-log').innerHTML = '<span class="text-secondary">Serial output will appear here.</span>';
+  document.getElementById('pb-label').textContent = 'no trace yet';
+  document.querySelectorAll('.pin').forEach((el) => el.classList.remove('glow', 'reading'));
+  document.querySelectorAll('.wire-row').forEach((el) => el.classList.remove('active'));
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = true));
+}
+
+function runCode() {
+  const runBtn = document.getElementById('run-btn');
+  let callIndex = 0;
+  const seqValues = sensorSequenceValues();
+  const result = CInterpreter.run(editor.getValue(), {
+    readSensor: () => {
+      if (!SENSOR) return 0;
+      const v = seqValues[Math.min(callIndex, seqValues.length - 1)];
+      callIndex++;
+      return v;
+    },
+  });
+
+  const out = document.getElementById('output-log');
+  if (result.error) out.innerHTML = `<div class="err">✕ ${result.error}</div>`;
+
+  steps = result.steps;
+  stepIndex = -1;
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = steps.length === 0));
+
+  if (steps.length) {
+    applyStep(0);
+    aiSay(`Run complete — ${steps.length} steps across setup() and 3 loop() cycles.`);
+  } else if (!result.error) {
+    out.innerHTML = '<span class="text-secondary">(no output)</span>';
+  }
+  lucide.createIcons();
+}
+
+document.getElementById('run-btn').addEventListener('click', runCode);
+document.getElementById('pb-reset').addEventListener('click', resetPlayback);
+document.getElementById('pb-prev').addEventListener('click', () => applyStep(stepIndex - 1));
+document.getElementById('pb-next').addEventListener('click', () => applyStep(stepIndex + 1));
+document.getElementById('pb-play').addEventListener('click', (e) => {
+  if (playTimer) { stopPlaying(); return; }
+  e.currentTarget.innerHTML = '<i data-lucide="pause" width="15"></i>';
+  lucide.createIcons();
+  playTimer = setInterval(() => {
+    if (stepIndex >= steps.length - 1) { stopPlaying(); return; }
+    applyStep(stepIndex + 1);
+  }, 700);
+});
+
+document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+  document.getElementById('lesson-shell').classList.toggle('fullscreen');
+  setTimeout(() => editor?.layout(), 50);
+});
+
+function pulseEditorLayout(durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    editor?.layout();
+    if (now - start < durationMs) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('workspace-expand-toggle').addEventListener('click', (e) => {
+  const area = document.getElementById('lesson-content-area');
+  const expanded = area.classList.toggle('workspace-expanded');
+  e.currentTarget.innerHTML = expanded ? '<i data-lucide="arrow-down-to-line" width="18"></i>' : '<i data-lucide="arrow-up-to-line" width="18"></i>';
+  e.currentTarget.title = expanded ? 'Collapse workspace' : 'Expand workspace';
+  lucide.createIcons();
+  pulseEditorLayout(260);
+});
+
+
+function aiAsk(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => aiSay(canned(text)), 400);
+}
+function canned(q) {
+  if (/explain/i.test(q)) return HINTS.explain;
+  if (/wrong|error/i.test(q)) return HINTS.wrong;
+  if (/challenge/i.test(q)) return HINTS.challenge;
+  return "Try running the sketch and stepping through it — I'll narrate what each pin is doing.";
+}
+document.getElementById('ai-send').addEventListener('click', () => {
+  const input = document.getElementById('ai-input');
+  if (!input.value.trim()) return;
+  aiAsk(input.value.trim());
+  input.value = '';
+});
+document.getElementById('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('ai-send').click();
+});
+</script>
+{% endblock %}

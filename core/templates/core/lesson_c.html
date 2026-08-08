@@ -1,0 +1,533 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}{{ lesson.title }} — Learn C — RealCode Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { overflow-x: hidden; background: var(--bg); }
+  footer { margin-top: 0 !important; }
+  .lesson-topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--card); flex-shrink: 0;
+  }
+  .lesson-crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .lesson-shell { display: flex; flex-direction: column; height: calc(100vh - 73px); }
+  .lesson-shell.fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; background: var(--bg); }
+  .lesson-content-area { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+  .lesson-shell.fullscreen .lesson-content-area { padding: 0; gap: 0; }
+  .lesson-shell.fullscreen .lesson-workspace, .lesson-shell.fullscreen .ai-tutor { border-radius: 0; box-shadow: none; }
+
+  .lesson-workspace {
+    display: flex; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: var(--shadow-soft); background: var(--card);
+  }
+  .lesson-panel { display: flex; flex-direction: column; min-width: 0; }
+  .lesson-panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 13px 18px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .lesson-panel-body { flex: 1; overflow: auto; padding: 16px; }
+  #panel-hw { flex: 0 0 20%; border-right: 1px solid var(--border); }
+  #panel-editor { flex: 1 1 60%; }
+  #panel-output { flex: 0 0 20%; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+
+  #monaco-container { flex: 1; background: #1e1e1e; }
+  .playback-bar { display: flex; align-items: center; gap: 8px; padding: 6px 16px; border-top: 1px solid var(--border); flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card)); }
+  .pb-btn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--card); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  .pb-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .pb-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .pb-label { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+
+  .lesson-panel-body::-webkit-scrollbar, .ai-tutor-body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .lesson-panel-body::-webkit-scrollbar-track, .ai-tutor-body::-webkit-scrollbar-track { background: transparent; }
+  .lesson-panel-body::-webkit-scrollbar-thumb, .ai-tutor-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  .lesson-panel-body::-webkit-scrollbar-thumb:hover, .ai-tutor-body::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  /* ---- Virtual hardware rig ---- */
+  .hw-rig { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .hw-sensor-block { width: 100%; margin-bottom: 8px; }
+  .hw-sensor-value { font-family: var(--font-mono); font-weight: 700; font-size: 15px; text-align: center; margin-bottom: 6px; }
+  .hw-arrow { color: var(--text-secondary); }
+  .hw-node { text-align: center; }
+  .hw-node-icon {
+    width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); background: var(--card); transition: all 300ms; margin: 0 auto 6px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+  .hw-node-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+  .hw-mcu .hw-node-icon { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--card)), var(--card)); }
+  .hw-mcu.executing .hw-node-icon { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); animation: mcuPulse 900ms ease-in-out infinite; }
+  @keyframes mcuPulse { 0%,100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); } 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 10%, transparent); } }
+  .hw-sensor.pulsing .hw-node-icon { border-color: var(--secondary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--secondary) 22%, transparent); }
+  .hw-actuators { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+  .hw-led.on .hw-node-icon { background: radial-gradient(circle, #fef08a, var(--warning)); box-shadow: 0 0 28px var(--warning); border-color: var(--warning); }
+  .hw-buzzer.on .hw-node-icon { background: color-mix(in srgb, var(--danger) 18%, var(--card)); border-color: var(--danger); box-shadow: 0 0 20px color-mix(in srgb, var(--danger) 45%, transparent); animation: buzz 180ms linear infinite; }
+  @keyframes buzz { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-1.5px); } 75% { transform: translateX(1.5px); } }
+  .hw-motor .hw-node-icon i { transition: none; }
+  .hw-motor.spinning .hw-node-icon i { animation: spin linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .hw-motor .hw-node-label small { display: block; font-family: var(--font-mono); }
+
+  .rc-line-glow { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .rc-line-glow-glyph { background: var(--accent); width: 4px !important; margin-left: 6px; box-shadow: 0 0 8px var(--accent); }
+
+  #output-log { font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
+  #output-log .ok { color: var(--success); }
+  #output-log .err { color: var(--danger); }
+
+  .scope-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); margin: 14px 0 8px; }
+  .scope-label:first-child { margin-top: 0; }
+  .var-card { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; background: var(--card); animation: varPop 300ms ease; display: flex; justify-content: space-between; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  @keyframes varPop { from { transform: scale(.94); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+  .var-name { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+  .var-value { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+  .call-stack-trail { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .call-stack-trail strong { color: var(--accent); }
+
+  .ai-tutor {
+    height: 220px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-soft);
+    background: var(--card); display: flex; flex-direction: column; overflow: hidden; transition: height 200ms ease;
+  }
+  .lesson-content-area.workspace-expanded .ai-tutor { height: 56px; }
+  .lesson-content-area.workspace-expanded .ai-tutor-body,
+  .lesson-content-area.workspace-expanded .ai-tutor-input { display: none; }
+  .ai-tutor-head {
+    padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 14px; flex-shrink: 0; background: color-mix(in srgb, var(--bg) 55%, var(--card));
+  }
+  .ai-tutor-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .ai-msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14.5px; line-height: 1.55; }
+  .ai-msg.bot { background: var(--bg); border: 1px solid var(--border); align-self: flex-start; }
+  .ai-msg.user { background: linear-gradient(135deg, var(--accent), var(--primary)); color: #fff; align-self: flex-end; }
+  .ai-tutor-input { display: flex; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .ai-tutor-input input { flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px; background: var(--bg); color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lesson-shell" id="lesson-shell">
+<div class="lesson-topbar">
+  <div class="lesson-crumb">
+    <a href="{% url 'course_c' %}" class="text-secondary">Learn C</a>
+    <i data-lucide="chevron-right" width="14"></i>
+    <span style="color:var(--text);">{{ lesson.title }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <button class="rc-icon-btn" id="workspace-expand-toggle" title="Expand workspace"><i data-lucide="arrow-up-to-line" width="18"></i></button>
+    <button class="rc-icon-btn" id="fullscreen-toggle" title="Fullscreen"><i data-lucide="maximize-2" width="18"></i></button>
+  </div>
+</div>
+
+<div class="lesson-content-area" id="lesson-content-area">
+<div class="lesson-workspace" id="lesson-workspace">
+
+  <div class="lesson-panel" id="panel-hw">
+    <div class="lesson-panel-head"><i data-lucide="cpu" width="14"></i> VIRTUAL HARDWARE</div>
+    <div class="lesson-panel-body">
+      <div class="hw-rig">
+
+        <div class="hw-sensor-block" id="hw-sensor-block" style="display:none;">
+          <div class="text-secondary" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;" id="hw-sensor-label">Sensor</div>
+          <div class="hw-sensor-value"><span id="hw-sensor-value">--</span> <span id="hw-sensor-unit" class="text-secondary"></span></div>
+          <input type="range" class="form-range" id="hw-sensor-slider">
+        </div>
+
+        <div class="hw-node hw-sensor" id="hw-node-sensor" style="display:none;">
+          <div class="hw-node-icon"><i data-lucide="radio" width="24" class="text-secondary"></i></div>
+          <div class="hw-node-label" id="hw-sensor-icon-label">Sensor</div>
+        </div>
+        <i data-lucide="arrow-down" width="16" class="hw-arrow" id="hw-arrow-1" style="display:none;"></i>
+
+        <div class="hw-node hw-mcu" id="hw-node-mcu">
+          <div class="hw-node-icon"><i data-lucide="cpu" width="26" class="text-secondary"></i></div>
+          <div class="hw-node-label">Microcontroller</div>
+        </div>
+        <i data-lucide="arrow-down" width="16" class="hw-arrow"></i>
+
+        <div class="hw-actuators" id="hw-actuators">
+          <div class="hw-node hw-led" id="hw-node-led" style="display:none;">
+            <div class="hw-node-icon"><i data-lucide="lightbulb" width="22" class="text-secondary"></i></div>
+            <div class="hw-node-label">LED</div>
+          </div>
+          <div class="hw-node hw-buzzer" id="hw-node-buzzer" style="display:none;">
+            <div class="hw-node-icon"><i data-lucide="bell-ring" width="22" class="text-secondary"></i></div>
+            <div class="hw-node-label">Buzzer</div>
+          </div>
+          <div class="hw-node hw-motor" id="hw-node-motor" style="display:none;">
+            <div class="hw-node-icon"><i data-lucide="fan" width="22" class="text-secondary"></i></div>
+            <div class="hw-node-label">Motor<br><small id="hw-motor-speed">0%</small></div>
+          </div>
+        </div>
+
+        <p class="text-secondary mt-3" style="font-size:12px; text-align:center;">Set the sensor above, hit <strong>Run</strong>, then step through execution to watch the hardware react.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-editor">
+    <div class="lesson-panel-head">
+      <i data-lucide="code-2" width="14"></i> CODE
+      <span class="flex-grow-1"></span>
+      <button class="btn-rc btn-rc-primary" style="padding:6px 16px; font-size:13px; background:linear-gradient(135deg, var(--accent), var(--primary));" id="run-btn">
+        <i data-lucide="play" width="14"></i> Run
+      </button>
+    </div>
+    <div id="monaco-container"></div>
+    <div class="playback-bar">
+      <button class="pb-btn" id="pb-reset" title="Reset" disabled><i data-lucide="rotate-ccw" width="15"></i></button>
+      <button class="pb-btn" id="pb-prev" title="Previous step" disabled><i data-lucide="skip-back" width="15"></i></button>
+      <button class="pb-btn" id="pb-play" title="Play" disabled><i data-lucide="play" width="15"></i></button>
+      <button class="pb-btn" id="pb-next" title="Next step" disabled><i data-lucide="skip-forward" width="15"></i></button>
+      <span class="pb-label" id="pb-label">no trace yet</span>
+    </div>
+  </div>
+
+  <div class="lesson-panel" id="panel-output">
+    <div class="lesson-panel-head"><i data-lucide="terminal" width="14"></i> SERIAL OUTPUT</div>
+    <div class="lesson-panel-body" style="flex:0 0 40%; border-bottom:1px solid var(--border);">
+      <div id="output-log"><span class="text-secondary">Console output will appear here.</span></div>
+    </div>
+    <div class="lesson-panel-head" style="border-top:1px solid var(--border);"><i data-lucide="layers" width="14"></i> VARIABLES</div>
+    <div class="lesson-panel-body" id="vars-body">
+      <p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution.</p>
+    </div>
+  </div>
+</div>
+
+<div class="ai-tutor" id="ai-tutor" style="height:220px;">
+  <div class="ai-tutor-head">
+    <i data-lucide="lightbulb" width="18"></i> Explanation
+  </div>
+  <div class="ai-tutor-body" id="ai-tutor-body">
+    <div class="ai-msg bot">Hi! Set the sensor slider, click <strong>Run</strong>, then step through execution one line at a time — I'll narrate what the hardware is doing.</div>
+  </div>
+  <div class="ai-tutor-input">
+    <input type="text" placeholder="Ask a question…" id="ai-input">
+    <button class="btn-rc btn-rc-primary" style="padding:10px 18px; background:linear-gradient(135deg, var(--accent), var(--primary));" id="ai-send"><i data-lucide="send" width="16"></i></button>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs/loader.js"></script>
+<script src="{% static 'js/c_interpreter.js' %}"></script>
+<script>
+const STARTER_CODE = {{ starter_code_json|safe }};
+const HINTS = {{ hints_json|safe }};
+const SENSOR = {{ sensor_json|safe }};
+
+/* ---------- Hardware node detection from source ---------- */
+function detectDevices(code) {
+  return {
+    led: /\bled_on\s*\(|\bled_off\s*\(/.test(code),
+    buzzer: /\bbuzzer_on\s*\(|\bbuzzer_off\s*\(/.test(code),
+    motor: /\bset_motor_speed\s*\(/.test(code),
+  };
+}
+
+function setupSensorUI() {
+  const block = document.getElementById('hw-sensor-block');
+  const node = document.getElementById('hw-node-sensor');
+  const arrow = document.getElementById('hw-arrow-1');
+  if (!SENSOR) { block.style.display = 'none'; node.style.display = 'none'; arrow.style.display = 'none'; return; }
+  block.style.display = 'block';
+  node.style.display = 'block';
+  arrow.style.display = 'block';
+  document.getElementById('hw-sensor-label').textContent = SENSOR.label;
+  document.getElementById('hw-sensor-icon-label').textContent = SENSOR.label;
+  document.getElementById('hw-sensor-unit').textContent = SENSOR.unit;
+  const slider = document.getElementById('hw-sensor-slider');
+  slider.min = SENSOR.min; slider.max = SENSOR.max; slider.value = SENSOR.default;
+  document.getElementById('hw-sensor-value').textContent = SENSOR.default;
+  slider.addEventListener('input', () => {
+    document.getElementById('hw-sensor-value').textContent = slider.value;
+  });
+}
+function currentSensorValue() {
+  if (!SENSOR) return 0;
+  return parseInt(document.getElementById('hw-sensor-slider').value, 10);
+}
+
+function setupActuatorUI() {
+  const devices = detectDevices(STARTER_CODE);
+  document.getElementById('hw-node-led').style.display = devices.led ? 'block' : 'none';
+  document.getElementById('hw-node-buzzer').style.display = devices.buzzer ? 'block' : 'none';
+  document.getElementById('hw-node-motor').style.display = devices.motor ? 'block' : 'none';
+}
+
+setupSensorUI();
+setupActuatorUI();
+
+/* ---------- Monaco ---------- */
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs' } });
+let editor, lineDecorations = [];
+require(['vs/editor/editor.main'], function () {
+  editor = monaco.editor.create(document.getElementById('monaco-container'), {
+    value: STARTER_CODE,
+    language: 'cpp',
+    theme: 'vs-dark',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    minimap: { enabled: true },
+    automaticLayout: true,
+    padding: { top: 16 },
+  });
+});
+
+/* ---------- Playback state ---------- */
+let steps = [];
+let stepIndex = -1;
+let playTimer = null;
+
+function computeStackAt(i) {
+  const stack = [{ func: 'main', locals: {}, line: null }];
+  for (let s = 0; s <= i; s++) {
+    const step = steps[s];
+    if (step.event === 'call') {
+      if (step.func === 'main' && stack.length === 1 && !stack[0].started) {
+        stack[0].locals = step.locals;
+        stack[0].started = true;
+      } else {
+        stack.push({ func: step.func, locals: step.locals, line: step.line });
+      }
+    } else if (step.event === 'line') {
+      stack[stack.length - 1].locals = step.locals;
+      stack[stack.length - 1].line = step.line;
+    } else if (step.event === 'return') {
+      if (stack.length > 1) stack.pop();
+    }
+  }
+  return stack;
+}
+
+function computeHwStateAt(i) {
+  const state = { led: 'off', buzzer: 'off', motor: 0 };
+  for (let s = 0; s <= i; s++) {
+    const hw = steps[s].hw;
+    if (!hw) continue;
+    if (hw.type === 'actuator') {
+      if (hw.device === 'motor') state.motor = hw.value;
+      else state[hw.device] = hw.state;
+    }
+  }
+  return state;
+}
+
+function renderHardware(i) {
+  const state = computeHwStateAt(i);
+  const step = steps[i];
+
+  document.getElementById('hw-node-mcu').classList.add('executing');
+
+  const sensorNode = document.getElementById('hw-node-sensor');
+  const isSensorStep = step.hw && step.hw.type === 'sensor_read';
+  sensorNode.classList.toggle('pulsing', !!isSensorStep);
+  if (isSensorStep) document.getElementById('hw-sensor-value').textContent = step.hw.value;
+
+  const led = document.getElementById('hw-node-led');
+  led.classList.toggle('on', state.led === 'on');
+
+  const buzzer = document.getElementById('hw-node-buzzer');
+  buzzer.classList.toggle('on', state.buzzer === 'on');
+
+  const motor = document.getElementById('hw-node-motor');
+  const motorIcon = motor.querySelector('.hw-node-icon i');
+  document.getElementById('hw-motor-speed').textContent = state.motor + '%';
+  motor.classList.toggle('spinning', state.motor > 0);
+  if (state.motor > 0) motorIcon.style.animationDuration = Math.max(0.15, 1.4 - state.motor / 100 * 1.2) + 's';
+}
+
+function renderVars(stack) {
+  const body = document.getElementById('vars-body');
+  body.innerHTML = '';
+
+  const trail = document.createElement('div');
+  trail.className = 'call-stack-trail';
+  trail.innerHTML = stack.map((f, idx) => (idx === stack.length - 1 ? `<strong>${f.func}()</strong>` : `${f.func}()`)).join(' &rarr; ');
+  body.appendChild(trail);
+
+  function renderGroup(title, locals) {
+    const keys = Object.keys(locals || {});
+    if (!keys.length) return;
+    const label = document.createElement('div');
+    label.className = 'scope-label';
+    label.textContent = title;
+    body.appendChild(label);
+    keys.forEach((name) => {
+      const card = document.createElement('div');
+      card.className = 'var-card';
+      card.innerHTML = `<span class="var-name">${name}</span><span class="var-value">${locals[name]}</span>`;
+      body.appendChild(card);
+    });
+  }
+
+  if (stack.length > 1) {
+    renderGroup(`Local — ${stack[stack.length - 1].func}()`, stack[stack.length - 1].locals);
+    renderGroup('main() scope', stack[0].locals);
+  } else {
+    renderGroup('main() scope', stack[0].locals);
+  }
+
+  if (!Object.keys(stack[0].locals || {}).length && stack.length === 1) {
+    body.innerHTML += '<p class="text-secondary" style="font-size:13px;">No variables assigned yet.</p>';
+  }
+}
+
+function aiSay(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function narrateStep(step) {
+  if (step.event === 'call' && step.func !== 'main') {
+    aiSay(`Entering ${step.func}() — the microcontroller jumps to this function's code.`);
+  } else if (step.event === 'return' && step.func !== 'main') {
+    aiSay(`${step.func}() returns control back to its caller.`);
+  } else if (step.hw && step.hw.type === 'sensor_read') {
+    aiSay(`Reading the ${step.hw.sensorKind} sensor: ${step.hw.value}. This value now drives the rest of the logic.`);
+  } else if (step.hw && step.hw.type === 'actuator') {
+    if (step.hw.device === 'motor') aiSay(`Motor speed set to ${step.hw.value}%.`);
+    else aiSay(`${step.hw.device.toUpperCase()} turned ${step.hw.state}.`);
+  }
+}
+
+function applyStep(i) {
+  stepIndex = Math.max(0, Math.min(i, steps.length - 1));
+  const step = steps[stepIndex];
+  const stack = computeStackAt(stepIndex);
+
+  lineDecorations = editor.deltaDecorations(lineDecorations, [{
+    range: new monaco.Range(step.line, 1, step.line, 1),
+    options: { isWholeLine: true, className: 'rc-line-glow', glyphMarginClassName: 'rc-line-glow-glyph' },
+  }]);
+  editor.revealLineInCenter(step.line);
+
+  renderHardware(stepIndex);
+  renderVars(stack);
+  narrateStep(step);
+
+  const out = document.getElementById('output-log');
+  const lines = steps.slice(0, stepIndex + 1).filter((s) => s.output).map((s) => '> ' + s.output);
+  out.innerHTML = lines.length ? lines.map((l) => `<div class="ok">${l}</div>`).join('') : '<span class="text-secondary">(no output yet)</span>';
+
+  document.getElementById('pb-label').textContent = `step ${stepIndex + 1} / ${steps.length} · line ${step.line}`;
+  document.getElementById('pb-prev').disabled = stepIndex === 0;
+  document.getElementById('pb-next').disabled = stepIndex === steps.length - 1;
+}
+
+function stopPlaying() {
+  clearInterval(playTimer);
+  playTimer = null;
+  document.getElementById('pb-play').innerHTML = '<i data-lucide="play" width="15"></i>';
+  lucide.createIcons();
+}
+
+function resetPlayback() {
+  stopPlaying();
+  steps = [];
+  stepIndex = -1;
+  lineDecorations = editor.deltaDecorations(lineDecorations, []);
+  document.getElementById('vars-body').innerHTML = '<p class="text-secondary" style="font-size:13px;">Hit <strong>Run</strong>, then step through execution.</p>';
+  document.getElementById('output-log').innerHTML = '<span class="text-secondary">Console output will appear here.</span>';
+  document.getElementById('pb-label').textContent = 'no trace yet';
+  document.getElementById('hw-node-mcu').classList.remove('executing');
+  document.getElementById('hw-node-sensor').classList.remove('pulsing');
+  document.getElementById('hw-node-led').classList.remove('on');
+  document.getElementById('hw-node-buzzer').classList.remove('on');
+  document.getElementById('hw-node-motor').classList.remove('spinning');
+  document.getElementById('hw-motor-speed').textContent = '0%';
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = true));
+}
+
+function runCode() {
+  const runBtn = document.getElementById('run-btn');
+  const result = CInterpreter.run(editor.getValue(), { readSensor: () => currentSensorValue() });
+
+  const out = document.getElementById('output-log');
+  if (result.error) {
+    out.innerHTML = `<div class="err">✕ Compile/runtime error: ${result.error}</div>`;
+  }
+
+  steps = result.steps;
+  stepIndex = -1;
+  ['pb-reset', 'pb-prev', 'pb-play', 'pb-next'].forEach((id) => (document.getElementById(id).disabled = steps.length === 0));
+
+  if (steps.length) {
+    applyStep(0);
+    aiSay(`Run complete — ${steps.length} execution steps captured. Use the step controls to walk through them.`);
+  } else if (!result.error) {
+    out.innerHTML = '<span class="text-secondary">(no output)</span>';
+  }
+  lucide.createIcons();
+}
+
+document.getElementById('run-btn').addEventListener('click', runCode);
+document.getElementById('pb-reset').addEventListener('click', resetPlayback);
+document.getElementById('pb-prev').addEventListener('click', () => applyStep(stepIndex - 1));
+document.getElementById('pb-next').addEventListener('click', () => applyStep(stepIndex + 1));
+document.getElementById('pb-play').addEventListener('click', (e) => {
+  if (playTimer) { stopPlaying(); return; }
+  e.currentTarget.innerHTML = '<i data-lucide="pause" width="15"></i>';
+  lucide.createIcons();
+  playTimer = setInterval(() => {
+    if (stepIndex >= steps.length - 1) { stopPlaying(); return; }
+    applyStep(stepIndex + 1);
+  }, 700);
+});
+
+document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+  document.getElementById('lesson-shell').classList.toggle('fullscreen');
+  setTimeout(() => editor?.layout(), 50);
+});
+
+function pulseEditorLayout(durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    editor?.layout();
+    if (now - start < durationMs) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('workspace-expand-toggle').addEventListener('click', (e) => {
+  const area = document.getElementById('lesson-content-area');
+  const expanded = area.classList.toggle('workspace-expanded');
+  e.currentTarget.innerHTML = expanded ? '<i data-lucide="arrow-down-to-line" width="18"></i>' : '<i data-lucide="arrow-up-to-line" width="18"></i>';
+  e.currentTarget.title = expanded ? 'Collapse workspace' : 'Expand workspace';
+  lucide.createIcons();
+  pulseEditorLayout(260);
+});
+
+function aiAsk(text) {
+  const body = document.getElementById('ai-tutor-body');
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  setTimeout(() => aiSay(canned(text)), 400);
+}
+function canned(q) {
+  if (/explain/i.test(q)) return HINTS.explain;
+  if (/wrong|error/i.test(q)) return HINTS.wrong;
+  if (/challenge/i.test(q)) return HINTS.challenge;
+  return "Try running the code and stepping through it — I'll narrate what the hardware is doing.";
+}
+document.getElementById('ai-send').addEventListener('click', () => {
+  const input = document.getElementById('ai-input');
+  if (!input.value.trim()) return;
+  aiAsk(input.value.trim());
+  input.value = '';
+});
+document.getElementById('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('ai-send').click();
+});
+</script>
+{% endblock %}
